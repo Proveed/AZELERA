@@ -1,0 +1,29 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#000000">
+
+    <!-- Capa de Video -->
+    <VideoView android:id="@+id/videoPlayer" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone"/>
+
+    <!-- Capa de Imagen -->
+    <ImageView android:id="@+id/imagePlayer" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone" android:scaleType="centerCrop"/>
+    
+    <!-- Capa de Texto (Cartelera) -->
+    <LinearLayout android:id="@+id/textContainer" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:gravity="center" android:background="#1E40AF" android:visibility="gone" android:padding="40dp">
+        <TextView android:id="@+id/tvMensaje" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFFFFF" android:textSize="60sp" android:textStyle="bold" android:textAlignment="center"/>
+    </LinearLayout>
+
+    <!-- Pantalla de Bienvenida / Clic para Activar -->
+    <LinearLayout android:id="@+id/layoutWelcome" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:gravity="center" android:orientation="vertical" android:background="#0F172A">
+        <TextView android:text="AZELERA NETWORK" android:textColor="#3B82F6" android:textSize="40sp" android:textStyle="bold"/>
+        <Button android:id="@+id/btnActivar" android:layout_width="wrap_content" android:layout_height="wrap_content" 
+            android:text="ACTIVAR ESTA PANTALLA" android:layout_marginTop="20dp"/>
+    </LinearLayout>
+
+    <!-- Contador de Pauta -->
+    <TextView android:id="@+id/tvTimer" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_alignParentTop="true" android:layout_alignParentEnd="true" android:layout_margin="20dp"
+        android:background="#80000000" android:padding="10dp" android:textColor="#FFFFFF" android:visibility="gone"/>
+</RelativeLayout>
