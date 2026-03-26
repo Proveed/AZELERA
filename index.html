@@ -1,12 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AZELERA TEST</title>
+
+<style>
+:root{
+--azul:#0A1F44;
+--naranja:#FF7A00;
+--bg:#0b0f1a;
+}
+
+body{
+margin:0;
+font-family:Arial;
+background:var(--bg);
+color:#fff;
+}
+
+/* HERO */
+.hero{
+text-align:center;
+padding:60px 20px;
+}
+
+.hero h1{
+color:var(--naranja);
+font-size:28px;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:1fr;
+gap:20px;
+padding:20px;
+}
+
+/* VIDEO AD */
+.ad{
+background:#111;
+padding:15px;
+border-radius:14px;
+box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+video{
+width:100%;
+border-radius:10px;
+}
+
+/* BOTON */
+button{
+width:100%;
+padding:12px;
+background:linear-gradient(45deg,#FF7A00,#ff9a2a);
+border:none;
+border-radius:10px;
+color:#fff;
+font-weight:bold;
+margin-top:10px;
+}
+
+</style>
+</head>
+
 <body>
 
-<h2>Mi página externa</h2>
+<div class="hero">
+<h1>Prueba de anuncios AZELERA</h1>
+<p>Simulación real de tráfico y conversión</p>
+</div>
 
-<div class="azelera-ad"></div>
+<div class="grid">
 
-<script src="https://TU-LINK-VERCEL/azelera.js"></script>
+<!-- ANUNCIO 1 -->
+<div class="ad">
+<video controls autoplay muted loop>
+<source src="video1.mp4" type="video/mp4">
+</video>
+
+<p>
+Estás perdiendo ventas por no tener proveedores.  
+AZELERA convierte tráfico en crecimiento real.
+</p>
+
+<button onclick="go()">Ver ahora</button>
+</div>
+
+<!-- ANUNCIO 2 -->
+<div class="ad">
+<video controls autoplay muted loop>
+<source src="video2.mp4" type="video/mp4">
+</video>
+
+<p>
+Tu problema no es tu negocio… es tu tráfico.  
+AZELERA lo soluciona.
+</p>
+
+<button onclick="go()">Ver ahora</button>
+</div>
+
+</div>
+
+<script>
+
+function go(){
+alert("Click registrado (simulación)");
+window.open("https://online-store--stratedsclub.replit.app/");
+}
+
+</script>
 
 </body>
 </html>
