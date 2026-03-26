@@ -1,0 +1,30 @@
+// Dentro de MainActivity.kt de la TV
+private fun conectarConFirebase() {
+    val dbRef = FirebaseDatabase.getInstance().getReference("anuncio_actual")
+
+    dbRef.addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val vencimiento = snapshot.child("vencimiento").value as? Long ?: 0
+            
+            // 1. Verificar si el tiempo de pauta (Meta-style) sigue vigente
+            if (System.currentTimeMillis() < vencimiento) {
+                val tipo = snapshot.child("tipo").value.toString()
+                val contenido = snapshot.child("contenido").value.toString()
+                
+                // 2. Actualizar UI según el tipo (TEXT, IMAGE, VIDEO)
+                runOnUiThread { 
+                    layoutWelcome.visibility = View.GONE
+                    aplicarMultimedia(tipo, contenido) 
+                }
+
+                // 3. Reportar estadística de vista a la ciudad correspondiente
+                val vistas = snapshot.child("stats/vistas").value as? Long ?: 0
+                dbRef.child("stats/vistas").setValue(vistas + 1)
+            } else {
+                // Pauta vencida
+                runOnUiThread { layoutWelcome.visibility = View.VISIBLE }
+            }
+        }
+        override fun onCancelled(error: DatabaseError) {}
+    })
+}
