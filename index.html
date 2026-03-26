@@ -3,114 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AZELERA TEST</title>
+<title>AZELERA TV</title>
 
 <style>
 :root{
 --azul:#0A1F44;
 --naranja:#FF7A00;
---bg:#0b0f1a;
 }
 
 body{
 margin:0;
+background:#000;
+overflow:hidden;
 font-family:Arial;
-background:var(--bg);
-color:#fff;
 }
 
-/* HERO */
-.hero{
-text-align:center;
-padding:60px 20px;
-}
-
-.hero h1{
-color:var(--naranja);
-font-size:28px;
-}
-
-/* GRID */
-.grid{
-display:grid;
-grid-template-columns:1fr;
-gap:20px;
-padding:20px;
-}
-
-/* VIDEO AD */
-.ad{
-background:#111;
-padding:15px;
-border-radius:14px;
-box-shadow:0 0 20px rgba(0,0,0,0.5);
-}
-
+/* VIDEO FULL */
 video{
+position:fixed;
+top:0;
+left:0;
 width:100%;
-border-radius:10px;
+height:100%;
+object-fit:cover;
 }
 
-/* BOTON */
-button{
-width:100%;
-padding:12px;
-background:linear-gradient(45deg,#FF7A00,#ff9a2a);
-border:none;
-border-radius:10px;
-color:#fff;
+/* LOGO */
+.logo{
+position:absolute;
+top:20px;
+left:20px;
+color:var(--naranja);
+font-size:18px;
 font-weight:bold;
-margin-top:10px;
 }
 
+/* CTA */
+.cta{
+position:absolute;
+bottom:30px;
+left:30px;
+background:var(--naranja);
+color:#fff;
+padding:14px 20px;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+
+/* TEXTO */
+.text{
+position:absolute;
+bottom:100px;
+left:30px;
+color:#fff;
+font-size:18px;
+max-width:400px;
+}
+
+/* TIMER */
+.timer{
+position:absolute;
+top:20px;
+right:20px;
+color:#fff;
+font-size:16px;
+background:rgba(0,0,0,0.5);
+padding:8px 12px;
+border-radius:10px;
+}
+
+/* BARRA */
+.bar{
+position:absolute;
+bottom:0;
+left:0;
+height:4px;
+background:var(--naranja);
+width:0%;
+}
 </style>
 </head>
 
 <body>
 
-<div class="hero">
-<h1>Prueba de anuncios AZELERA</h1>
-<p>Simulación real de tráfico y conversión</p>
-</div>
+<div class="logo">AZELERA</div>
 
-<div class="grid">
+<video id="player" autoplay muted></video>
 
-<!-- ANUNCIO 1 -->
-<div class="ad">
-<video controls autoplay muted loop>
-<source src="video1.mp4" type="video/mp4">
-</video>
+<div class="text" id="text"></div>
 
-<p>
-Estás perdiendo ventas por no tener proveedores.  
-AZELERA convierte tráfico en crecimiento real.
-</p>
+<div class="cta" onclick="go()">VER AHORA</div>
 
-<button onclick="go()">Ver ahora</button>
-</div>
+<div class="timer" id="timer"></div>
 
-<!-- ANUNCIO 2 -->
-<div class="ad">
-<video controls autoplay muted loop>
-<source src="video2.mp4" type="video/mp4">
-</video>
-
-<p>
-Tu problema no es tu negocio… es tu tráfico.  
-AZELERA lo soluciona.
-</p>
-
-<button onclick="go()">Ver ahora</button>
-</div>
-
-</div>
+<div class="bar" id="bar"></div>
 
 <script>
 
-function go(){
-alert("Click registrado (simulación)");
-window.open("https://online-store--stratedsclub.replit.app/");
+let ads = [
+{
+video:"video1.mp4",
+text:"Estás perdiendo clientes ahora mismo. AZELERA los convierte.",
+url:"https://online-store--stratedsclub.replit.app/"
+},
+{
+video:"video2.mp4",
+text:"Tu negocio necesita tráfico real. AZELERA lo crea.",
+url:"https://online-store--stratedsclub.replit.app/"
 }
+];
+
+let index = 0;
+let duration = 15;
+
+function playAd(){
+
+let ad = ads[index];
+
+let player = document.getElementById("player");
+player.src = ad.video;
+
+document.getElementById("text").innerText = ad.text;
+
+let timer = duration;
+let progress = 0;
+
+let bar = document.getElementById("bar");
+bar.style.width = "0%";
+
+let interval = setInterval(()=>{
+
+timer--;
+progress++;
+
+document.getElementById("timer").innerText = timer + "s";
+
+bar.style.width = (progress/duration)*100 + "%";
+
+if(timer <= 0){
+clearInterval(interval);
+
+index++;
+if(index >= ads.length) index = 0;
+
+playAd();
+}
+
+},1000);
+
+}
+
+function go(){
+window.open(ads[index].url);
+}
+
+playAd();
 
 </script>
 
