@@ -3,19 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AZELERA TV</title>
+<title>AZELERA TV PRO</title>
 
 <style>
-:root{
---azul:#0A1F44;
---naranja:#FF7A00;
-}
-
 body{
 margin:0;
 background:#000;
 overflow:hidden;
-font-family:Arial;
 }
 
 /* VIDEO FULL */
@@ -33,54 +27,29 @@ object-fit:cover;
 position:absolute;
 top:20px;
 left:20px;
-color:var(--naranja);
+color:#FF7A00;
 font-size:18px;
 font-weight:bold;
-}
-
-/* CTA */
-.cta{
-position:absolute;
-bottom:30px;
-left:30px;
-background:var(--naranja);
-color:#fff;
-padding:14px 20px;
-border-radius:12px;
-font-weight:bold;
-cursor:pointer;
 }
 
 /* TEXTO */
 .text{
 position:absolute;
-bottom:100px;
+bottom:80px;
 left:30px;
 color:#fff;
-font-size:18px;
-max-width:400px;
+font-size:20px;
+max-width:500px;
 }
 
-/* TIMER */
-.timer{
+/* QR (OPCIONAL) */
+.qr{
 position:absolute;
-top:20px;
+bottom:20px;
 right:20px;
-color:#fff;
-font-size:16px;
-background:rgba(0,0,0,0.5);
-padding:8px 12px;
+background:#fff;
+padding:10px;
 border-radius:10px;
-}
-
-/* BARRA */
-.bar{
-position:absolute;
-bottom:0;
-left:0;
-height:4px;
-background:var(--naranja);
-width:0%;
 }
 </style>
 </head>
@@ -93,29 +62,23 @@ width:0%;
 
 <div class="text" id="text"></div>
 
-<div class="cta" onclick="go()">VER AHORA</div>
-
-<div class="timer" id="timer"></div>
-
-<div class="bar" id="bar"></div>
-
 <script>
 
+// 🔥 AQUI CONFIGURAS TUS ANUNCIOS
 let ads = [
 {
-video:"video1.mp4",
-text:"Estás perdiendo clientes ahora mismo. AZELERA los convierte.",
+video:"https://TU-SERVIDOR/video1.mp4",
+text:"Impulsa tu negocio con AZELERA",
 url:"https://online-store--stratedsclub.replit.app/"
 },
 {
-video:"video2.mp4",
-text:"Tu negocio necesita tráfico real. AZELERA lo crea.",
+video:"https://TU-SERVIDOR/video2.mp4",
+text:"Más tráfico, más clientes",
 url:"https://online-store--stratedsclub.replit.app/"
 }
 ];
 
 let index = 0;
-let duration = 15;
 
 function playAd(){
 
@@ -126,36 +89,16 @@ player.src = ad.video;
 
 document.getElementById("text").innerText = ad.text;
 
-let timer = duration;
-let progress = 0;
-
-let bar = document.getElementById("bar");
-bar.style.width = "0%";
-
-let interval = setInterval(()=>{
-
-timer--;
-progress++;
-
-document.getElementById("timer").innerText = timer + "s";
-
-bar.style.width = (progress/duration)*100 + "%";
-
-if(timer <= 0){
-clearInterval(interval);
+// duración automática del video
+player.onended = () => {
 
 index++;
 if(index >= ads.length) index = 0;
 
 playAd();
-}
 
-},1000);
+};
 
-}
-
-function go(){
-window.open(ads[index].url);
 }
 
 playAd();
