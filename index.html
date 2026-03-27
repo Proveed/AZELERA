@@ -1,78 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>AZELERA STUDIO - DISEÑO</title>
+    <meta charset="UTF-8"><title>AZELERA TV TERMINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* TEXTURAS ELEGANTES */
+        .tex-degradado { background-image: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent); }
+        .tex-malla { 
+            background-image: radial-gradient(#ffffff0a 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .tex-cristal { backdrop-filter: blur(10px); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Animación para el degradado vivo */
+        @keyframes flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .bg-vivo { background-size: 200% 200%; animation: flow 10s ease infinite; }
+        
+        .qr-box canvas, .qr-box img { width: 140px !important; height: 140px !important; }
+    </style>
+</head>
+<body class="bg-black text-white h-screen w-screen flex overflow-hidden">
+
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="this.style.display='none'; iniciar();">
+        <div class="bg-blue-600 w-20 h-20 rounded-2xl animate-bounce flex items-center justify-center shadow-2xl text-4xl font-black italic">A</div>
+        <p class="mt-4 text-blue-500 font-bold uppercase tracking-widest text-xs">Sincronizar Canal</p>
+    </div>
+
+    <div id="pantalla" class="w-full h-full flex items-center justify-center relative transition-all duration-1000">
+        <!-- El contenido se genera aquí -->
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
-
-        window.publicar = () => {
-            const data = {
-                titulo: document.getElementById('tit').value,
-                media: document.getElementById('med').value,
-                link: document.getElementById('lin').value,
-                tipo: document.getElementById('tip').value,
-                color: document.getElementById('col').value,
-                textura: document.getElementById('tex').value, // NUEVO
-                fuente: document.getElementById('fnt').value,   // NUEVO
-                activo: true,
-                vence: Date.now() + (parseInt(document.getElementById('dias').value || 1) * 86400000)
-            };
-            push(ref(db, 'carrusel'), data).then(() => alert("Anuncio Programado"));
-        };
+        
+        let anuncios = [];
+        let indice = 0;
 
         onValue(ref(db, 'carrusel'), (snap) => {
-            const lista = document.getElementById('lista'); lista.innerHTML = "";
-            const data = snap.val(); if(!data) return;
-            Object.keys(data).forEach(id => {
-                lista.innerHTML += `<div class="bg-black/50 p-3 rounded-xl mb-2 flex justify-between items-center border border-white/5">
-                    <span class="text-xs font-bold">${data[id].titulo}</span>
-                    <button onclick="borrar('${id}')" class="text-red-500 text-xs font-black">X</button>
-                </div>`;
-            });
+            const data = snap.val();
+            if(!data) return;
+            anuncios = Object.values(data).filter(a => a.activo !== false && a.vence > Date.now());
         });
-        window.borrar = (id) => remove(ref(db, `carrusel/${id}`));
+
+        window.iniciar = () => { if(anuncios.length > 0) mostrar(); };
+
+        function mostrar() {
+            const ad = anuncios[indice];
+            const p = document.getElementById('pantalla');
+            
+            if(ad.tipo === 'texto') {
+                // Aplicar Color + Textura
+                p.style.backgroundColor = ad.color;
+                p.className = `w-full h-full flex flex-col items-center justify-center tex-${ad.textura} ${ad.textura === 'degradado' ? 'bg-vivo' : ''}`;
+                
+                p.innerHTML = `
+                    <div class="max-w-6xl text-center px-10">
+                        <h2 class="text-8xl ${ad.fuente} uppercase mb-16 drop-shadow-2xl leading-none">${ad.media}</h2>
+                        <div class="flex flex-col items-center">
+                            <div id="qr-mini" class="qr-box p-3 bg-white rounded-3xl shadow-2xl border-4 border-white/20"></div>
+                            <p class="mt-4 font-black text-xs tracking-[0.5em] opacity-40 uppercase">${ad.titulo}</p>
+                        </div>
+                    </div>`;
+                new QRCode(document.getElementById("qr-mini"), { text: ad.link, width: 140, height: 140 });
+                setTimeout(proximo, 12000);
+            } 
+            else if(ad.tipo === 'video') {
+                p.style.backgroundColor = "black";
+                p.innerHTML = `<video src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
+                const v = p.querySelector('video');
+                v.muted = false; v.onended = proximo; v.onerror = proximo;
+            } 
+            else {
+                p.style.backgroundColor = ad.color;
+                p.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-6 drop-shadow-2xl">`;
+                setTimeout(proximo, 15000);
+            }
+        }
+
+        function proximo() {
+            indice = (indice + 1) % anuncios.length;
+            mostrar();
+        }
     </script>
-</head>
-<body class="bg-[#020617] text-white p-4 font-sans">
-    <div class="max-w-md mx-auto bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl border border-white/10">
-        <h1 class="text-xl font-black text-blue-500 mb-4 italic text-center uppercase">Azelera <span class="text-white">Designer</span></h1>
-        
-        <input id="tit" type="text" placeholder="Cliente" class="w-full p-3 mb-2 bg-black rounded-xl border border-white/5 outline-none text-sm">
-        <textarea id="med" placeholder="Texto o Link Directo .mp4 / .jpg" class="w-full p-3 mb-2 bg-black rounded-xl border border-white/5 outline-none h-20 text-sm"></textarea>
-        <input id="lin" type="text" placeholder="Link QR (WhatsApp/Web)" class="w-full p-3 mb-4 bg-black rounded-xl border border-white/5 outline-none text-sm">
-
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <select id="tip" class="bg-black p-3 rounded-xl border border-white/5 text-xs">
-                <option value="texto">📝 TEXTO SOLO</option>
-                <option value="video">🎥 VIDEO MP4</option>
-                <option value="image">🖼️ IMAGEN</option>
-            </select>
-            <div class="flex items-center bg-black rounded-xl border border-white/5 p-2">
-                <input id="col" type="color" value="#1e3a8a" class="w-full h-8 bg-transparent">
-            </div>
-            
-            <select id="tex" class="bg-black p-3 rounded-xl border border-white/5 text-xs text-blue-400">
-                <option value="solido">Liso (Sólido)</option>
-                <option value="degradado">Degradado Vivo</option>
-                <option value="malla">Malla Galáctica</option>
-                <option value="cristal">Cristal Ahumado</option>
-            </select>
-
-            <select id="fnt" class="bg-black p-3 rounded-xl border border-white/5 text-xs text-blue-400">
-                <option value="font-black italic">Impacto (Italic)</option>
-                <option value="font-serif">Elegante (Serif)</option>
-                <option value="font-mono">Tecnológico (Mono)</option>
-                <option value="font-light tracking-[0.2em]">Minimalista</option>
-            </select>
-            
-            <input id="dias" type="number" placeholder="Días" class="bg-black p-3 rounded-xl border border-white/5 text-center text-xs">
-        </div>
-
-        <button onclick="publicar()" class="w-full bg-blue-600 py-4 rounded-2xl font-black shadow-lg uppercase tracking-widest text-sm">Programar Ahora</button>
-        <div id="lista" class="mt-6 border-t border-white/5 pt-4"></div>
-    </div>
 </body>
 </html>
