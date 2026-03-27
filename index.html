@@ -1,76 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>AZELERA TV CUSTOM</title>
+    <meta charset="UTF-8"><title>AZELERA TV LIVE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-black text-white h-screen w-screen flex overflow-hidden">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="this.style.display='none'; iniciar();">
-        <div class="bg-blue-600 p-8 rounded-full animate-bounce text-6xl font-black italic shadow-2xl">A</div>
-        <h1 class="mt-6 text-2xl font-bold text-blue-400">TOCA PARA INICIAR AZELERA ADS</h1>
+    <!-- BOTÓN DE INICIO: AQUÍ DAS CLICK -->
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="iniciarSistema()">
+        <div class="bg-blue-600 w-32 h-32 rounded-full animate-bounce flex items-center justify-center shadow-2xl">
+            <span class="text-7xl font-black italic">A</span>
+        </div>
+        <h1 class="mt-8 text-2xl font-black text-blue-400 tracking-widest uppercase">Toca para Sincronizar</h1>
     </div>
 
-    <!-- ZONA DE CONTENIDO DINÁMICO -->
-    <div class="w-2/3 h-full relative flex items-center justify-center transition-colors duration-1000" id="media-zone"></div>
+    <div class="w-2/3 h-full relative transition-all duration-700" id="media-zone"></div>
 
-    <!-- PANEL LATERAL -->
-    <div class="w-1/3 h-full bg-[#010409] flex flex-col items-center justify-between py-16 px-10 border-l border-white/5 shadow-[-50px_0_100px_rgba(0,0,0,0.5)]">
-        <h1 class="text-3xl font-black text-blue-500 italic uppercase">Azelera <span class="text-white">Ads</span></h1>
+    <div class="w-1/3 h-full bg-[#010409] flex flex-col items-center justify-between py-16 px-10 border-l border-white/5">
+        <h1 class="text-3xl font-black text-blue-500 italic uppercase">Azelera <span class="text-white text-lg">Ads</span></h1>
         <div class="flex flex-col items-center w-full">
-            <div id="qrcode" class="p-4 bg-white rounded-[2rem] shadow-2xl border-[10px] border-white"></div>
-            <h2 id="cliente-display" class="mt-8 text-2xl font-black text-slate-500 text-center uppercase tracking-widest"></h2>
+            <div id="qrcode" class="p-4 bg-white rounded-3xl shadow-2xl border-[8px] border-white"></div>
+            <h2 id="cli" class="mt-8 text-2xl font-black text-slate-500 text-center uppercase tracking-widest leading-none"></h2>
         </div>
-        <p class="text-[10px] text-slate-700 font-bold uppercase tracking-[0.5em]">Atacames Live Stream</p>
+        <p class="text-[10px] text-slate-800 font-bold uppercase tracking-[0.5em]">Atacames Live Terminal</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        
         const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
         const qr = new QRCode(document.getElementById("qrcode"), { width: 300, height: 300 });
         
         let anuncios = [];
         let indice = 0;
 
+        // Escuchar base de datos
         onValue(ref(db, 'carrusel'), (snap) => {
             const data = snap.val();
-            if(!data) return;
-            anuncios = Object.values(data).filter(a => a.vence > Date.now());
+            if(!data) { anuncios = []; return; }
+            const ahora = Date.now();
+            // FILTRAR: Solo anuncios activos y que no hayan vencido
+            anuncios = Object.values(data).filter(a => a.activo === true && a.vence > ahora);
         });
 
-        window.iniciar = () => { if(anuncios.length > 0) mostrar(); };
+        window.iniciarSistema = () => {
+            document.getElementById('overlay').style.display = 'none';
+            if(anuncios.length > 0) mostrar();
+            else alert("No hay anuncios activos en el carrusel.");
+        };
 
         function mostrar() {
+            if(anuncios.length === 0) return;
             const ad = anuncios[indice];
             const zone = document.getElementById('media-zone');
-            document.getElementById('cliente-display').innerText = ad.titulo;
-            
-            // Cambiar el color de fondo de la zona de publicidad
+            document.getElementById('cli').innerText = ad.titulo;
             zone.style.backgroundColor = ad.color || "#000000";
             
             qr.clear();
             qr.makeCode(ad.link || "https://azelera.com");
 
             if(ad.tipo === 'video') {
-                zone.innerHTML = `<video src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
-                zone.querySelector('video').onended = proximo;
+                zone.innerHTML = `<video id="vid" src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
+                const v = document.getElementById('vid');
+                v.onended = proximo;
+                // Intentar quitar el mute si ya hubo click
+                v.muted = false; 
+                v.onerror = () => { console.log("Error video"); proximo(); };
             } 
             else if(ad.tipo === 'image') {
-                zone.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-4 shadow-2xl">`;
+                zone.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-4 animate-in fade-in duration-1000">`;
                 setTimeout(proximo, 15000);
             }
-            else { // TEXTO
-                zone.innerHTML = `<h2 class="text-white text-[9rem] font-black uppercase text-center leading-[0.85] p-10 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">${ad.media}</h2>`;
+            else {
+                zone.innerHTML = `<h2 class="text-white text-[9rem] font-black uppercase text-center leading-[0.85] p-10">${ad.media}</h2>`;
                 setTimeout(proximo, 10000);
             }
         }
 
         function proximo() {
-            indice = (indice + 1) % anuncios.length;
-            mostrar();
+            if(anuncios.length > 0) {
+                indice = (indice + 1) % anuncios.length;
+                mostrar();
+            }
         }
     </script>
 </body>
