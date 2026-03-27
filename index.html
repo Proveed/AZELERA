@@ -1,88 +1,75 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZELERA ADS - PANTALLA EN VIVO</title>
+    <title>AZELERA TV PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .bg-grid { background-image: radial-gradient(circle, #1e293b 1px, transparent 1px); background-size: 50px 50px; }
-    </style>
+    <!-- Librería para generar el QR automáticamente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body class="bg-[#020617] text-white overflow-hidden h-screen w-screen flex flex-col justify-between p-12 bg-grid">
-
-    <!-- Header Premium -->
-    <div class="flex justify-between items-center border-b border-white/10 pb-8">
-        <div class="flex items-center gap-6">
-            <div class="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40">
-                <span class="text-5xl font-black italic">A</span>
-            </div>
-            <div>
-                <h1 class="text-6xl font-black tracking-tighter">AZELERA <span class="text-blue-500">ADS</span></h1>
-                <p class="text-blue-400 font-bold tracking-[0.5em] text-sm uppercase">Smart Advertising System</p>
-            </div>
+<body class="bg-black text-white overflow-hidden h-screen w-screen flex">
+    
+    <!-- LADO IZQUIERDO: MEDIA (Imagen o Video) -->
+    <div class="w-2/3 h-full bg-slate-900 relative flex items-center justify-center border-r border-white/10">
+        <div id="container-media" class="w-full h-full">
+            <h1 id="placeholder" class="text-4xl text-slate-700 font-black flex h-full items-center justify-center italic">AZELERA ADS SYSTEM</h1>
         </div>
-        <div class="text-right">
-            <p id="reloj" class="text-5xl font-mono font-bold text-slate-300">00:00:00</p>
-            <p class="text-slate-500 font-bold tracking-widest text-lg uppercase mt-2">Atacames, Ecuador</p>
+        <!-- Texto sobrepuesto abajo -->
+        <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/90 p-12">
+            <h2 id="display-texto" class="text-7xl font-black uppercase tracking-tighter">ESPERANDO CONTENIDO...</h2>
         </div>
     </div>
 
-    <!-- CONTENIDO CENTRAL (ANUNCIO) -->
-    <div class="flex-1 flex items-center justify-center text-center px-10">
-        <h2 id="textoAnuncio" class="text-[9rem] font-black leading-[0.85] tracking-tight animate-pulse-slow uppercase drop-shadow-2xl">
-            ESPERANDO ANUNCIO...
-        </h2>
-    </div>
-
-    <!-- Footer de Estado -->
-    <div class="bg-blue-600/5 border border-white/10 p-8 rounded-[3rem] flex justify-between items-center backdrop-blur-xl">
-        <div class="flex flex-col">
-            <span class="text-slate-500 font-bold uppercase tracking-widest text-sm">Estado del Sistema</span>
-            <div class="flex gap-4 items-center mt-1">
-                <div class="w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
-                <span class="text-green-500 font-black text-2xl uppercase">En Línea</span>
-            </div>
+    <!-- LADO DERECHO: QR Y LLAMADA A LA ACCIÓN -->
+    <div class="w-1/3 h-full flex flex-col items-center justify-center p-12 space-y-12 bg-[#020617]">
+        <div class="text-center">
+            <h3 class="text-blue-500 font-black text-3xl mb-2 italic">¡ESCANEA Y COMPRA!</h3>
+            <p class="text-slate-400 font-bold tracking-widest text-sm uppercase">Accede a esta oferta ahora</p>
         </div>
-        <div class="text-right">
-            <p class="text-slate-400 font-medium italic text-xl">Sincronizado con Base de Datos Realtime</p>
+
+        <!-- El QR se genera aquí -->
+        <div id="qrcode" class="p-4 bg-white rounded-3xl shadow-2xl shadow-blue-500/20"></div>
+
+        <div class="bg-blue-600 w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl">
+            <span class="text-5xl font-black italic">A</span>
         </div>
     </div>
 
-    <!-- Lógica de Conexión Total -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        // CONFIGURACIÓN EXACTA PARA NAVI-9AA8E
-        const firebaseConfig = {
-            apiKey: "AIzaSyD3-C7guJHkmZuwv-TgXNh0XwlYfTSei2k",
-            authDomain: "navi-9aa8e.firebaseapp.com",
-            projectId: "navi-9aa8e",
-            databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com",
-            appId: "1:324234630620:web:0a7353de37ac04fabd6b19"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // ESCUCHADOR EN TIEMPO REAL (Misma ruta que el panel)
-        const anuncioRef = ref(db, 'anuncio_actual');
         
-        onValue(anuncioRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.mensaje) {
-                console.log("Nuevo anuncio recibido:", data.mensaje);
-                document.getElementById('textoAnuncio').innerText = data.mensaje;
-            }
-        });
+        const config = { 
+            apiKey: "AIzaSyD3-C7guJHkmZuwv-TgXNh0XwlYfTSei2k", 
+            authDomain: "navi-9aa8e.firebaseapp.com", 
+            projectId: "navi-9aa8e", 
+            databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com", 
+            appId: "1:324234630620:web:0a7353de37ac04fabd6b19" 
+        };
+        const db = getDatabase(initializeApp(config));
+        const qrcodeContainer = document.getElementById("qrcode");
+        let qr = new QRCode(qrcodeContainer, { width: 300, height: 300 });
 
-        // Reloj en vivo
-        setInterval(() => {
-            const ahora = new Date();
-            document.getElementById('reloj').innerText = ahora.toLocaleTimeString();
-        }, 1000);
+        onValue(ref(db, 'anuncio_actual'), (snap) => {
+            const data = snap.val();
+            if(!data) return;
+
+            // 1. Actualizar Texto
+            document.getElementById('display-texto').innerText = data.texto;
+
+            // 2. Actualizar Media (Imagen o Video con Audio)
+            const container = document.getElementById('container-media');
+            if(data.tipo === 'video') {
+                container.innerHTML = `<video src="${data.mediaUrl}" autoplay loop muted class="w-full h-full object-cover"></video>`;
+                // NOTA: Para audio, el usuario debe interactuar una vez con la TV, o puedes quitar el 'muted' si la TV lo permite.
+            } else {
+                container.innerHTML = `<img src="${data.mediaUrl}" class="w-full h-full object-cover shadow-2xl">`;
+            }
+
+            // 3. Generar nuevo QR
+            qr.clear();
+            qr.makeCode(data.linkCliente || "https://azelera.com");
+        });
     </script>
 </body>
 </html>
