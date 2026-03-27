@@ -2,33 +2,33 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AZELERA TV PRO - ATACAMES</title>
+    <title>AZELERA PREMIUM TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background-color: black; margin: 0; overflow: hidden; color: white; }
-        #pantalla { width: 100vw; height: 100vh; display: flex; transition: all 0.8s ease-in-out; }
+        body { background: #000; margin: 0; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
+        #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: space-between; transition: 1s ease; }
         
-        /* FONDOS DINÁMICOS */
-        .bg-degradado { background: linear-gradient(-45deg, #0f172a, #1e3a8a, #020617, #1e40af); background-size: 400% 400%; animation: gradient 15s ease infinite; }
-        @keyframes gradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+        .bg-degradado { background-size: 400% 400%; animation: moveGradient 15s ease infinite; }
+        @keyframes moveGradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+        
         .bg-malla { background-image: radial-gradient(#ffffff1a 1px, transparent 1px); background-size: 50px 50px; }
+
+        .text-area { flex: 1.2; padding: 0 5%; display: flex; flex-direction: column; justify-content: center; border-left: 8px solid rgba(255,255,255,0.2); height: 70vh; margin-left: 5%; }
+        .qr-area { flex: 0.8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* CONTENEDORES RESPONSIVOS */
-        .contenedor-texto { display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; padding: 5%; gap: 40px; }
-        .texto-anuncio { flex: 2; text-align: left; color: white; text-shadow: 0 10px 30px rgba(0,0,0,0.8); line-height: 1; word-wrap: break-word; }
-        .zona-qr { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); padding: 40px; border-radius: 4rem; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-        
-        .qr-blanco { background: white; padding: 20px; border-radius: 2.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 50px; border-radius: 4rem; box-shadow: 0 40px 100px rgba(0,0,0,0.5); }
+        .qr-white { background: white; padding: 25px; border-radius: 2.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
+
+        .mensaje { font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; font-weight: 900; text-transform: uppercase; text-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         video, img { width: 100%; height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
 
     <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="startApp()">
-        <div class="w-24 h-24 bg-blue-600 rounded-full animate-ping absolute opacity-20"></div>
-        <div class="relative bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl">A</div>
-        <h1 class="mt-8 text-xl font-black tracking-[0.4em] uppercase">Iniciar Pantalla</h1>
+        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black animate-pulse shadow-[0_0_60px_rgba(37,99,235,0.5)]">AZ</div>
+        <p class="mt-8 text-slate-500 font-bold tracking-[0.4em] uppercase">Tocar para Conectar</p>
     </div>
 
     <div id="pantalla"></div>
@@ -39,65 +39,66 @@
 
         const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
         let anuncios = [];
-        let indice = 0;
+        let index = 0;
 
         onValue(ref(db, 'carrusel'), (snap) => {
             const data = snap.val();
-            if (data) {
-                anuncios = Object.values(data).filter(a => a.activo !== false);
-            }
+            if (data) anuncios = Object.values(data).filter(a => a.activo);
         });
 
         window.startApp = () => {
             document.getElementById('init').style.display = 'none';
-            mostrar();
+            render();
         };
 
-        function mostrar() {
-            if (anuncios.length === 0) return setTimeout(mostrar, 2000);
-            
-            const ad = anuncios[indice];
+        function render() {
+            if (anuncios.length === 0) return setTimeout(render, 2000);
+            const ad = anuncios[index];
             const p = document.getElementById('pantalla');
             p.innerHTML = "";
+            
+            // APLICAR COLOR DE FONDO Y TEXTURA
             p.style.backgroundColor = ad.color || "#020617";
-            p.className = `bg-${ad.textura || 'solido'}`;
+            if(ad.textura === 'degradado') {
+                p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000, ${ad.color}cc)`;
+                p.className = "bg-degradado";
+            } else {
+                p.style.backgroundImage = "none";
+                p.className = `bg-${ad.textura || 'solido'}`;
+            }
 
             if (ad.tipo === 'video') {
+                p.style.padding = "0";
                 p.innerHTML = `<video id="v" autoplay muted><source src="${ad.media}" type="video/mp4"></video>`;
-                document.getElementById('v').onended = next;
-            } 
-            else if (ad.tipo === 'image') {
-                p.innerHTML = `<img src="${ad.media}" class="animate-in zoom-in duration-700">`;
-                setTimeout(next, 12000);
-            } 
-            else {
-                // DISEÑO DE TEXTO OPTIMIZADO
+                document.getElementById('v').onended = rotate;
+            } else if (ad.tipo === 'image') {
+                p.style.padding = "0";
+                p.innerHTML = `<img src="${ad.media}" class="animate-in fade-in zoom-in duration-1000">`;
+                setTimeout(rotate, 15000);
+            } else {
+                // DISEÑO TEXTO + QR (SIN CORTES)
                 p.innerHTML = `
-                    <div class="contenedor-texto animate-in slide-in-from-bottom duration-700">
-                        <div class="texto-anuncio">
-                            <h2 class="${ad.fuente || 'font-black'} text-[7vw] leading-none uppercase mb-4">${ad.media}</h2>
-                            <p class="text-[2vw] opacity-60 font-bold tracking-widest uppercase italic">${ad.titulo}</p>
-                        </div>
-                        <div class="zona-qr">
-                            <div id="qrcode" class="qr-blanco"></div>
-                            <p class="mt-6 text-white font-black text-sm tracking-tighter uppercase opacity-80">Escanéame para Info</p>
+                    <div class="text-area animate-in slide-in-from-left duration-700">
+                        <p class="text-blue-400 font-black uppercase tracking-[0.3em] mb-4 text-sm">${ad.titulo}</p>
+                        <h2 class="mensaje ${ad.fuente || 'font-black'}">${ad.media}</h2>
+                    </div>
+                    <div class="qr-area animate-in zoom-in duration-1000">
+                        <div class="glass-card">
+                            <div id="qrcode" class="qr-white"></div>
+                            <p class="mt-8 font-black uppercase tracking-widest text-slate-400 text-sm italic">Escanéame para info</p>
                         </div>
                     </div>
                 `;
                 new QRCode(document.getElementById("qrcode"), {
-                    text: ad.link || "https://wa.me/593",
-                    width: 280,
-                    height: 280,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff"
+                    text: ad.link, width: 300, height: 300, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.H
                 });
-                setTimeout(next, 15000);
+                setTimeout(rotate, 15000);
             }
         }
 
-        function next() {
-            indice = (indice + 1) % anuncios.length;
-            mostrar();
+        function rotate() {
+            index = (index + 1) % anuncios.length;
+            render();
         }
     </script>
 </body>
