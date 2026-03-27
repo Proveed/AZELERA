@@ -1,82 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>AZELERA TV PREMIUM</title>
+    <meta charset="UTF-8"><title>AZELERA STUDIO - DISEÑO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        /* Fondo elegante con movimiento suave */
-        .bg-animated {
-            background: linear-gradient(-45deg, #0f172a, #1e3a8a, #020617, #1e40af);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        @keyframes gradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        
-        /* Contenedor del QR pequeño para texto */
-        .qr-small canvas, .qr-small img { width: 120px !important; height: 120px !important; }
-    </style>
-</head>
-<body class="bg-black text-white h-screen w-screen flex overflow-hidden font-sans">
-
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="this.style.display='none'; iniciar();">
-        <div class="bg-blue-600 w-24 h-24 rounded-full animate-bounce flex items-center justify-center shadow-2xl text-5xl font-black italic">A</div>
-        <h1 class="mt-6 text-xl font-bold text-blue-400">TOCA PARA SINCRONIZAR ATACAMES</h1>
-    </div>
-
-    <div id="main-content" class="w-full h-full flex flex-col items-center justify-center transition-all duration-1000">
-        </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
-        let anuncios = [];
-        let indice = 0;
+
+        window.publicar = () => {
+            const data = {
+                titulo: document.getElementById('tit').value,
+                media: document.getElementById('med').value,
+                link: document.getElementById('lin').value,
+                tipo: document.getElementById('tip').value,
+                color: document.getElementById('col').value,
+                textura: document.getElementById('tex').value, // NUEVO
+                fuente: document.getElementById('fnt').value,   // NUEVO
+                activo: true,
+                vence: Date.now() + (parseInt(document.getElementById('dias').value || 1) * 86400000)
+            };
+            push(ref(db, 'carrusel'), data).then(() => alert("Anuncio Programado"));
+        };
 
         onValue(ref(db, 'carrusel'), (snap) => {
-            const data = snap.val();
-            if(!data) return;
-            anuncios = Object.values(data).filter(a => a.activo !== false && a.vence > Date.now());
+            const lista = document.getElementById('lista'); lista.innerHTML = "";
+            const data = snap.val(); if(!data) return;
+            Object.keys(data).forEach(id => {
+                lista.innerHTML += `<div class="bg-black/50 p-3 rounded-xl mb-2 flex justify-between items-center border border-white/5">
+                    <span class="text-xs font-bold">${data[id].titulo}</span>
+                    <button onclick="borrar('${id}')" class="text-red-500 text-xs font-black">X</button>
+                </div>`;
+            });
         });
-
-        window.iniciar = () => { if(anuncios.length > 0) mostrar(); };
-
-        function mostrar() {
-            const ad = anuncios[indice];
-            const main = document.getElementById('main-content');
-            main.className = "w-full h-full flex flex-col items-center justify-center transition-all duration-1000";
-            
-            if(ad.tipo === 'texto') {
-                main.classList.add('bg-animated');
-                main.style.backgroundColor = ad.color; // Usa el color elegido en el panel
-                main.innerHTML = `
-                    <div class="flex flex-col items-center max-w-5xl px-10 text-center">
-                        <h2 class="text-7xl md:text-9xl font-black uppercase mb-12 drop-shadow-2xl leading-tight">${ad.media}</h2>
-                        <div id="qr-mini" class="qr-small p-3 bg-white rounded-2xl shadow-xl"></div>
-                        <p class="mt-4 font-bold tracking-[0.3em] text-sm opacity-50 uppercase">${ad.titulo}</p>
-                    </div>`;
-                new QRCode(document.getElementById("qr-mini"), { text: ad.link, width: 120, height: 120 });
-                setTimeout(proximo, 12000);
-            } 
-            else if(ad.tipo === 'video') {
-                main.innerHTML = `<video src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
-                const v = main.querySelector('video');
-                v.muted = false;
-                v.onended = proximo;
-                v.onerror = proximo;
-            } 
-            else { // IMAGEN
-                main.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-6 animate-in fade-in">`;
-                setTimeout(proximo, 15000);
-            }
-        }
-
-        function proximo() {
-            indice = (indice + 1) % anuncios.length;
-            mostrar();
-        }
+        window.borrar = (id) => remove(ref(db, `carrusel/${id}`));
     </script>
+</head>
+<body class="bg-[#020617] text-white p-4 font-sans">
+    <div class="max-w-md mx-auto bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl border border-white/10">
+        <h1 class="text-xl font-black text-blue-500 mb-4 italic text-center uppercase">Azelera <span class="text-white">Designer</span></h1>
+        
+        <input id="tit" type="text" placeholder="Cliente" class="w-full p-3 mb-2 bg-black rounded-xl border border-white/5 outline-none text-sm">
+        <textarea id="med" placeholder="Texto o Link Directo .mp4 / .jpg" class="w-full p-3 mb-2 bg-black rounded-xl border border-white/5 outline-none h-20 text-sm"></textarea>
+        <input id="lin" type="text" placeholder="Link QR (WhatsApp/Web)" class="w-full p-3 mb-4 bg-black rounded-xl border border-white/5 outline-none text-sm">
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <select id="tip" class="bg-black p-3 rounded-xl border border-white/5 text-xs">
+                <option value="texto">📝 TEXTO SOLO</option>
+                <option value="video">🎥 VIDEO MP4</option>
+                <option value="image">🖼️ IMAGEN</option>
+            </select>
+            <div class="flex items-center bg-black rounded-xl border border-white/5 p-2">
+                <input id="col" type="color" value="#1e3a8a" class="w-full h-8 bg-transparent">
+            </div>
+            
+            <select id="tex" class="bg-black p-3 rounded-xl border border-white/5 text-xs text-blue-400">
+                <option value="solido">Liso (Sólido)</option>
+                <option value="degradado">Degradado Vivo</option>
+                <option value="malla">Malla Galáctica</option>
+                <option value="cristal">Cristal Ahumado</option>
+            </select>
+
+            <select id="fnt" class="bg-black p-3 rounded-xl border border-white/5 text-xs text-blue-400">
+                <option value="font-black italic">Impacto (Italic)</option>
+                <option value="font-serif">Elegante (Serif)</option>
+                <option value="font-mono">Tecnológico (Mono)</option>
+                <option value="font-light tracking-[0.2em]">Minimalista</option>
+            </select>
+            
+            <input id="dias" type="number" placeholder="Días" class="bg-black p-3 rounded-xl border border-white/5 text-center text-xs">
+        </div>
+
+        <button onclick="publicar()" class="w-full bg-blue-600 py-4 rounded-2xl font-black shadow-lg uppercase tracking-widest text-sm">Programar Ahora</button>
+        <div id="lista" class="mt-6 border-t border-white/5 pt-4"></div>
+    </div>
 </body>
 </html>
