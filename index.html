@@ -1,88 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>AZELERA TV LIVE</title>
+    <meta charset="UTF-8"><title>AZELERA TV PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Fondo elegante con movimiento suave */
+        .bg-animated {
+            background: linear-gradient(-45deg, #0f172a, #1e3a8a, #020617, #1e40af);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+        
+        /* Contenedor del QR pequeño para texto */
+        .qr-small canvas, .qr-small img { width: 120px !important; height: 120px !important; }
+    </style>
 </head>
-<body class="bg-black text-white h-screen w-screen flex overflow-hidden">
+<body class="bg-black text-white h-screen w-screen flex overflow-hidden font-sans">
 
-    <!-- BOTÓN DE INICIO: AQUÍ DAS CLICK -->
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="iniciarSistema()">
-        <div class="bg-blue-600 w-32 h-32 rounded-full animate-bounce flex items-center justify-center shadow-2xl">
-            <span class="text-7xl font-black italic">A</span>
-        </div>
-        <h1 class="mt-8 text-2xl font-black text-blue-400 tracking-widest uppercase">Toca para Sincronizar</h1>
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="this.style.display='none'; iniciar();">
+        <div class="bg-blue-600 w-24 h-24 rounded-full animate-bounce flex items-center justify-center shadow-2xl text-5xl font-black italic">A</div>
+        <h1 class="mt-6 text-xl font-bold text-blue-400">TOCA PARA SINCRONIZAR ATACAMES</h1>
     </div>
 
-    <div class="w-2/3 h-full relative transition-all duration-700" id="media-zone"></div>
-
-    <div class="w-1/3 h-full bg-[#010409] flex flex-col items-center justify-between py-16 px-10 border-l border-white/5">
-        <h1 class="text-3xl font-black text-blue-500 italic uppercase">Azelera <span class="text-white text-lg">Ads</span></h1>
-        <div class="flex flex-col items-center w-full">
-            <div id="qrcode" class="p-4 bg-white rounded-3xl shadow-2xl border-[8px] border-white"></div>
-            <h2 id="cli" class="mt-8 text-2xl font-black text-slate-500 text-center uppercase tracking-widest leading-none"></h2>
+    <div id="main-content" class="w-full h-full flex flex-col items-center justify-center transition-all duration-1000">
         </div>
-        <p class="text-[10px] text-slate-800 font-bold uppercase tracking-[0.5em]">Atacames Live Terminal</p>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
-        const qr = new QRCode(document.getElementById("qrcode"), { width: 300, height: 300 });
         
+        const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
         let anuncios = [];
         let indice = 0;
 
-        // Escuchar base de datos
         onValue(ref(db, 'carrusel'), (snap) => {
             const data = snap.val();
-            if(!data) { anuncios = []; return; }
-            const ahora = Date.now();
-            // FILTRAR: Solo anuncios activos y que no hayan vencido
-            anuncios = Object.values(data).filter(a => a.activo === true && a.vence > ahora);
+            if(!data) return;
+            anuncios = Object.values(data).filter(a => a.activo !== false && a.vence > Date.now());
         });
 
-        window.iniciarSistema = () => {
-            document.getElementById('overlay').style.display = 'none';
-            if(anuncios.length > 0) mostrar();
-            else alert("No hay anuncios activos en el carrusel.");
-        };
+        window.iniciar = () => { if(anuncios.length > 0) mostrar(); };
 
         function mostrar() {
-            if(anuncios.length === 0) return;
             const ad = anuncios[indice];
-            const zone = document.getElementById('media-zone');
-            document.getElementById('cli').innerText = ad.titulo;
-            zone.style.backgroundColor = ad.color || "#000000";
+            const main = document.getElementById('main-content');
+            main.className = "w-full h-full flex flex-col items-center justify-center transition-all duration-1000";
             
-            qr.clear();
-            qr.makeCode(ad.link || "https://azelera.com");
-
-            if(ad.tipo === 'video') {
-                zone.innerHTML = `<video id="vid" src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
-                const v = document.getElementById('vid');
-                v.onended = proximo;
-                // Intentar quitar el mute si ya hubo click
-                v.muted = false; 
-                v.onerror = () => { console.log("Error video"); proximo(); };
+            if(ad.tipo === 'texto') {
+                main.classList.add('bg-animated');
+                main.style.backgroundColor = ad.color; // Usa el color elegido en el panel
+                main.innerHTML = `
+                    <div class="flex flex-col items-center max-w-5xl px-10 text-center">
+                        <h2 class="text-7xl md:text-9xl font-black uppercase mb-12 drop-shadow-2xl leading-tight">${ad.media}</h2>
+                        <div id="qr-mini" class="qr-small p-3 bg-white rounded-2xl shadow-xl"></div>
+                        <p class="mt-4 font-bold tracking-[0.3em] text-sm opacity-50 uppercase">${ad.titulo}</p>
+                    </div>`;
+                new QRCode(document.getElementById("qr-mini"), { text: ad.link, width: 120, height: 120 });
+                setTimeout(proximo, 12000);
             } 
-            else if(ad.tipo === 'image') {
-                zone.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-4 animate-in fade-in duration-1000">`;
+            else if(ad.tipo === 'video') {
+                main.innerHTML = `<video src="${ad.media}" autoplay playsinline class="w-full h-full object-cover"></video>`;
+                const v = main.querySelector('video');
+                v.muted = false;
+                v.onended = proximo;
+                v.onerror = proximo;
+            } 
+            else { // IMAGEN
+                main.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain p-6 animate-in fade-in">`;
                 setTimeout(proximo, 15000);
-            }
-            else {
-                zone.innerHTML = `<h2 class="text-white text-[9rem] font-black uppercase text-center leading-[0.85] p-10">${ad.media}</h2>`;
-                setTimeout(proximo, 10000);
             }
         }
 
         function proximo() {
-            if(anuncios.length > 0) {
-                indice = (indice + 1) % anuncios.length;
-                mostrar();
-            }
+            indice = (indice + 1) % anuncios.length;
+            mostrar();
         }
     </script>
 </body>
