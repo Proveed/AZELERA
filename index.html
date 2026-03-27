@@ -7,32 +7,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { background: #000; margin: 0; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
-        #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: space-between; transition: 1s ease; }
-        
+        #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: space-between; }
         .bg-degradado { background-size: 400% 400%; animation: moveGradient 15s ease infinite; }
         @keyframes moveGradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        
-        .bg-malla { background-image: radial-gradient(#ffffff1a 1px, transparent 1px); background-size: 50px 50px; }
-
-        .text-area { flex: 1.2; padding: 0 5%; display: flex; flex-direction: column; justify-content: center; border-left: 8px solid rgba(255,255,255,0.2); height: 75vh; margin-left: 5%; }
-        .qr-area { flex: 0.8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 50px; border-radius: 4rem; box-shadow: 0 40px 100px rgba(0,0,0,0.5); }
-        .qr-white { background: white; padding: 25px; border-radius: 2.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
-
-        .mensaje-main { font-size: clamp(2.5rem, 5.5vw, 5.5rem); line-height: 0.9; font-weight: 900; text-transform: uppercase; text-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .mensaje-sub { font-size: clamp(1.2rem, 2.5vw, 2.5rem); margin-top: 1.5rem; font-weight: 400; opacity: 0.9; line-height: 1.2; max-width: 90%; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        
-        video, img { width: 100%; height: 100%; object-fit: contain; }
+        .text-area { flex: 1.2; padding: 0 5%; border-left: 8px solid rgba(255,255,255,0.2); height: 75vh; margin-left: 5%; display: flex; flex-direction: column; justify-content: center; }
+        .mensaje-main { font-size: clamp(2.5rem, 5.5vw, 5.5rem); line-height: 0.9; font-weight: 900; text-transform: uppercase; }
+        .mensaje-sub { font-size: clamp(1.2rem, 2.5vw, 2.5rem); margin-top: 2rem; font-weight: 400; opacity: 0.9; max-width: 90%; }
+        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 50px; border-radius: 4rem; }
+        .qr-white { background: white; padding: 25px; border-radius: 2.5rem; }
     </style>
 </head>
 <body>
-
     <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="startApp()">
-        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black animate-pulse shadow-[0_0_60px_rgba(37,99,235,0.5)] text-white">AZ</div>
-        <p class="mt-8 text-slate-500 font-bold tracking-[0.4em] uppercase">Conectar Pantalla</p>
+        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black">AZ</div>
+        <p class="mt-8 text-slate-500 font-bold uppercase">Conectar Pantalla</p>
     </div>
-
     <div id="pantalla"></div>
 
     <script type="module">
@@ -58,49 +47,37 @@
             const ad = anuncios[index];
             const p = document.getElementById('pantalla');
             p.innerHTML = "";
-            
             p.style.backgroundColor = ad.color || "#020617";
+            
             if(ad.textura === 'degradado') {
                 p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000, ${ad.color}cc)`;
                 p.className = "bg-degradado";
-            } else {
-                p.style.backgroundImage = "none";
-                p.className = `bg-${ad.textura || 'solido'}`;
-            }
+            } else { p.className = `bg-${ad.textura || 'solido'}`; }
 
-            if (ad.tipo === 'video') {
-                p.style.padding = "0";
-                p.innerHTML = `<video id="v" autoplay muted><source src="${ad.media}" type="video/mp4"></video>`;
-                document.getElementById('v').onended = rotate;
-            } else if (ad.tipo === 'image') {
-                p.style.padding = "0";
-                p.innerHTML = `<img src="${ad.media}" class="animate-in fade-in zoom-in duration-1000">`;
-                setTimeout(rotate, 15000);
-            } else {
+            if (ad.tipo === 'texto') {
                 p.innerHTML = `
-                    <div class="text-area animate-in slide-in-from-left duration-700">
-                        <p class="text-blue-400 font-black uppercase tracking-[0.3em] mb-4 text-xs">${ad.titulo}</p>
-                        <h2 class="mensaje-main ${ad.fuente || 'font-black'}">${ad.media}</h2>
-                        ${ad.subtitulo ? `<p class="mensaje-sub animate-in fade-in duration-1000 delay-300">${ad.subtitulo}</p>` : ''}
+                    <div class="text-area">
+                        <p class="text-blue-400 font-black uppercase text-xs mb-4">${ad.titulo}</p>
+                        <h2 class="mensaje-main ${ad.fuente}">${ad.media}</h2>
+                        <div class="mensaje-sub">${ad.subtitulo || ""}</div>
                     </div>
-                    <div class="qr-area animate-in zoom-in duration-1000">
+                    <div class="flex-1 flex justify-center">
                         <div class="glass-card">
                             <div id="qrcode" class="qr-white"></div>
-                            <p class="mt-8 font-black uppercase tracking-widest text-slate-400 text-[10px] italic">Escanéame para info</p>
                         </div>
                     </div>
                 `;
-                new QRCode(document.getElementById("qrcode"), {
-                    text: ad.link, width: 300, height: 300, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.H
-                });
+                new QRCode(document.getElementById("qrcode"), { text: ad.link, width: 300, height: 300 });
                 setTimeout(rotate, 15000);
+            } else if (ad.tipo === 'image') {
+                p.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain">`;
+                setTimeout(rotate, 15000);
+            } else {
+                p.innerHTML = `<video id="v" autoplay muted class="w-full h-full object-contain"><source src="${ad.media}"></video>`;
+                document.getElementById('v').onended = rotate;
             }
         }
-
-        function rotate() {
-            index = (index + 1) % anuncios.length;
-            render();
-        }
+        function rotate() { index = (index + 1) % anuncios.length; render(); }
     </script>
 </body>
 </html>
