@@ -2,106 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AZELERA ADS - TERMINAL TV</title>
+    <title>AZELERA TV PRO - ATACAMES</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background-color: black; margin: 0; overflow: hidden; font-family: sans-serif; }
-        #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; transition: all 1s ease-in-out; }
+        body { background-color: black; margin: 0; overflow: hidden; color: white; }
+        #pantalla { width: 100vw; height: 100vh; display: flex; transition: all 0.8s ease-in-out; }
         
-        /* EFECTOS DE FONDO QUE EL PANEL MANDA */
-        .bg-degradado { background-size: 400% 400%; animation: gradient 15s ease infinite; background-image: linear-gradient(-45deg, #0f172a, #1e3a8a, #020617, #1e40af); }
+        /* FONDOS DINÁMICOS */
+        .bg-degradado { background: linear-gradient(-45deg, #0f172a, #1e3a8a, #020617, #1e40af); background-size: 400% 400%; animation: gradient 15s ease infinite; }
         @keyframes gradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+        .bg-malla { background-image: radial-gradient(#ffffff1a 1px, transparent 1px); background-size: 50px 50px; }
         
-        .bg-malla { background-image: radial-gradient(#ffffff1a 1px, transparent 1px); background-size: 40px 40px; }
-        .bg-solido { background-image: none; }
-
+        /* CONTENEDORES RESPONSIVOS */
+        .contenedor-texto { display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; padding: 5%; gap: 40px; }
+        .texto-anuncio { flex: 2; text-align: left; color: white; text-shadow: 0 10px 30px rgba(0,0,0,0.8); line-height: 1; word-wrap: break-word; }
+        .zona-qr { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); padding: 40px; border-radius: 4rem; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        
+        .qr-blanco { background: white; padding: 20px; border-radius: 2.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         video, img { width: 100%; height: 100%; object-fit: contain; }
-        .qr-card { background: white; padding: 15px; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-    <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer text-center" onclick="startApp()">
-        <div class="w-32 h-32 bg-blue-600 rounded-full animate-bounce flex items-center justify-center text-6xl font-extrabold shadow-2xl shadow-blue-500/50">A</div>
-        <h1 class="mt-10 text-2xl font-black text-white uppercase tracking-[0.5em]">Conectar Pantalla</h1>
-        <p class="text-blue-400 mt-4 animate-pulse">Toca aquí para iniciar el carrusel de Atacames</p>
+    <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="startApp()">
+        <div class="w-24 h-24 bg-blue-600 rounded-full animate-ping absolute opacity-20"></div>
+        <div class="relative bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl">A</div>
+        <h1 class="mt-8 text-xl font-black tracking-[0.4em] uppercase">Iniciar Pantalla</h1>
     </div>
 
-    <div id="pantalla">
-        </div>
+    <div id="pantalla"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
-        
         let anuncios = [];
         let indice = 0;
-        let timer;
 
-        // 1. ESCUCHAR LA BASE DE DATOS EN TIEMPO REAL
-        onValue(ref(db, 'carrusel'), (snapshot) => {
-            const data = snapshot.val();
+        onValue(ref(db, 'carrusel'), (snap) => {
+            const data = snap.val();
             if (data) {
-                // Filtramos solo los anuncios activos
                 anuncios = Object.values(data).filter(a => a.activo !== false);
-                console.log("Anuncios actualizados:", anuncios.length);
-                if (!timer && anuncios.length > 0) mostrarSiguiente();
             }
         });
 
         window.startApp = () => {
             document.getElementById('init').style.display = 'none';
-            if (anuncios.length > 0) mostrarSiguiente();
+            mostrar();
         };
 
-        function mostrarSiguiente() {
-            if (anuncios.length === 0) return;
+        function mostrar() {
+            if (anuncios.length === 0) return setTimeout(mostrar, 2000);
             
             const ad = anuncios[indice];
             const p = document.getElementById('pantalla');
-            p.innerHTML = ""; // Limpiar pantalla
-            
-            // APLICAR COMANDOS VISUALES DEL PANEL
+            p.innerHTML = "";
             p.style.backgroundColor = ad.color || "#020617";
             p.className = `bg-${ad.textura || 'solido'}`;
 
-            // LÓGICA POR TIPO DE ANUNCIO
             if (ad.tipo === 'video') {
-                p.innerHTML = `<video id="vid" autoplay muted playsinline><source src="${ad.media}" type="video/mp4"></video>`;
-                const v = document.getElementById('vid');
-                v.onended = () => rotar();
-                v.onerror = () => setTimeout(rotar, 2000);
+                p.innerHTML = `<video id="v" autoplay muted><source src="${ad.media}" type="video/mp4"></video>`;
+                document.getElementById('v').onended = next;
             } 
             else if (ad.tipo === 'image') {
-                p.innerHTML = `<img src="${ad.media}" class="animate-in fade-in zoom-in duration-1000">`;
-                setTimeout(rotar, 15000); // 15 segundos para fotos
+                p.innerHTML = `<img src="${ad.media}" class="animate-in zoom-in duration-700">`;
+                setTimeout(next, 12000);
             } 
             else {
-                // ANUNCIO DE TEXTO (USA TODOS LOS ESTILOS DEL PANEL)
+                // DISEÑO DE TEXTO OPTIMIZADO
                 p.innerHTML = `
-                    <div class="text-center p-10 flex flex-col items-center">
-                        <h2 class="text-[7vw] ${ad.fuente || 'font-bold'} leading-none mb-10 drop-shadow-2xl">
-                            ${ad.media}
-                        </h2>
-                        <div class="qr-card" id="qrcode"></div>
-                        <p class="mt-8 text-xl font-black opacity-40 uppercase tracking-widest">${ad.titulo}</p>
+                    <div class="contenedor-texto animate-in slide-in-from-bottom duration-700">
+                        <div class="texto-anuncio">
+                            <h2 class="${ad.fuente || 'font-black'} text-[7vw] leading-none uppercase mb-4">${ad.media}</h2>
+                            <p class="text-[2vw] opacity-60 font-bold tracking-widest uppercase italic">${ad.titulo}</p>
+                        </div>
+                        <div class="zona-qr">
+                            <div id="qrcode" class="qr-blanco"></div>
+                            <p class="mt-6 text-white font-black text-sm tracking-tighter uppercase opacity-80">Escanéame para Info</p>
+                        </div>
                     </div>
                 `;
                 new QRCode(document.getElementById("qrcode"), {
                     text: ad.link || "https://wa.me/593",
-                    width: 250,
-                    height: 250
+                    width: 280,
+                    height: 280,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff"
                 });
-                setTimeout(rotar, 12000); // 12 segundos para texto
+                setTimeout(next, 15000);
             }
         }
 
-        function rotar() {
+        function next() {
             indice = (indice + 1) % anuncios.length;
-            mostrarSiguiente();
+            mostrar();
         }
     </script>
 </body>
