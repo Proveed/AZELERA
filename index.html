@@ -1,75 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>AZELERA TV PRO</title>
+    <meta charset="UTF-8"><title>AZELERA TV - LIVE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librería para generar el QR automáticamente -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body class="bg-black text-white overflow-hidden h-screen w-screen flex">
+<body class="bg-black text-white h-screen w-screen flex overflow-hidden">
     
-    <!-- LADO IZQUIERDO: MEDIA (Imagen o Video) -->
-    <div class="w-2/3 h-full bg-slate-900 relative flex items-center justify-center border-r border-white/10">
-        <div id="container-media" class="w-full h-full">
-            <h1 id="placeholder" class="text-4xl text-slate-700 font-black flex h-full items-center justify-center italic">AZELERA ADS SYSTEM</h1>
-        </div>
-        <!-- Texto sobrepuesto abajo -->
-        <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/90 p-12">
-            <h2 id="display-texto" class="text-7xl font-black uppercase tracking-tighter">ESPERANDO CONTENIDO...</h2>
-        </div>
+    <div class="w-2/3 h-full relative" id="media-zone">
+        <!-- El contenido cambia aquí -->
     </div>
 
-    <!-- LADO DERECHO: QR Y LLAMADA A LA ACCIÓN -->
-    <div class="w-1/3 h-full flex flex-col items-center justify-center p-12 space-y-12 bg-[#020617]">
-        <div class="text-center">
-            <h3 class="text-blue-500 font-black text-3xl mb-2 italic">¡ESCANEA Y COMPRA!</h3>
-            <p class="text-slate-400 font-bold tracking-widest text-sm uppercase">Accede a esta oferta ahora</p>
-        </div>
-
-        <!-- El QR se genera aquí -->
-        <div id="qrcode" class="p-4 bg-white rounded-3xl shadow-2xl shadow-blue-500/20"></div>
-
-        <div class="bg-blue-600 w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl">
-            <span class="text-5xl font-black italic">A</span>
-        </div>
+    <div class="w-1/3 h-full bg-[#020617] flex flex-col items-center justify-center p-10 border-l border-white/5">
+        <div id="qrcode" class="p-4 bg-white rounded-2xl mb-8"></div>
+        <h2 id="txt-display" class="text-5xl font-black text-center uppercase tracking-tighter"></h2>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         
-        const config = { 
-            apiKey: "AIzaSyD3-C7guJHkmZuwv-TgXNh0XwlYfTSei2k", 
-            authDomain: "navi-9aa8e.firebaseapp.com", 
-            projectId: "navi-9aa8e", 
-            databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com", 
-            appId: "1:324234630620:web:0a7353de37ac04fabd6b19" 
-        };
+        const config = { databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" };
         const db = getDatabase(initializeApp(config));
-        const qrcodeContainer = document.getElementById("qrcode");
-        let qr = new QRCode(qrcodeContainer, { width: 300, height: 300 });
+        const qr = new QRCode(document.getElementById("qrcode"), { width: 280, height: 280 });
+        
+        let anuncios = [];
+        let indice = 0;
 
-        onValue(ref(db, 'anuncio_actual'), (snap) => {
-            const data = snap.val();
+        onValue(ref(db, 'carrusel'), (snapshot) => {
+            const data = snapshot.val();
             if(!data) return;
-
-            // 1. Actualizar Texto
-            document.getElementById('display-texto').innerText = data.texto;
-
-            // 2. Actualizar Media (Imagen o Video con Audio)
-            const container = document.getElementById('container-media');
-            if(data.tipo === 'video') {
-                container.innerHTML = `<video src="${data.mediaUrl}" autoplay loop muted class="w-full h-full object-cover"></video>`;
-                // NOTA: Para audio, el usuario debe interactuar una vez con la TV, o puedes quitar el 'muted' si la TV lo permite.
-            } else {
-                container.innerHTML = `<img src="${data.mediaUrl}" class="w-full h-full object-cover shadow-2xl">`;
-            }
-
-            // 3. Generar nuevo QR
-            qr.clear();
-            qr.makeCode(data.linkCliente || "https://azelera.com");
+            
+            const ahora = Date.now();
+            // Filtrar solo anuncios que no han vencido
+            anuncios = Object.values(data).filter(a => a.vence > ahora);
+            if(anuncios.length > 0) mostrarSiguiente();
         });
+
+        function mostrarSiguiente() {
+            if (anuncios.length === 0) return;
+            const ad = anuncios[indice];
+            
+            const zone = document.getElementById('media-zone');
+            document.getElementById('txt-display').innerText = ad.texto;
+            
+            qr.clear();
+            qr.makeCode(ad.link || "https://azelera.com");
+
+            if(ad.tipo === 'video') {
+                zone.innerHTML = `<video src="${ad.mediaUrl}" autoplay muted playsinline class="w-full h-full object-cover"></video>`;
+                // Cuando el video termina, pasa al siguiente
+                zone.querySelector('video').onended = () => { avanzar(); };
+            } else {
+                zone.innerHTML = `<img src="${ad.mediaUrl}" class="w-full h-full object-cover animate-in fade-in duration-1000">`;
+                setTimeout(avanzar, 15000); // Imágenes duran 15 segundos
+            }
+        }
+
+        function avanzar() {
+            indice = (indice + 1) % anuncios.length;
+            mostrarSiguiente();
+        }
+
+        // Importante: La TV necesita un clic del usuario al iniciar para permitir audio/autoplay
+        window.onclick = () => { document.querySelectorAll('video').forEach(v => v.muted = false); };
     </script>
 </body>
 </html>
