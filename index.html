@@ -2,78 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AZELERA ADS - Pantalla en Vivo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZELERA ADS - PANTALLA EN VIVO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes pulse-slow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-        .bg-grid {
-            background-image: radial-gradient(circle, #1e293b 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .bg-grid { background-image: radial-gradient(circle, #1e293b 1px, transparent 1px); background-size: 50px 50px; }
     </style>
 </head>
 <body class="bg-[#020617] text-white overflow-hidden h-screen w-screen flex flex-col justify-between p-12 bg-grid">
 
-    <!-- Header de la Pantalla -->
+    <!-- Header Premium -->
     <div class="flex justify-between items-center border-b border-white/10 pb-8">
-        <div class="flex items-center gap-4">
-            <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <span class="text-4xl font-black italic">A</span>
+        <div class="flex items-center gap-6">
+            <div class="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40">
+                <span class="text-5xl font-black italic">A</span>
             </div>
-            <h1 class="text-5xl font-black tracking-tighter">AZELERA <span class="text-blue-500 text-3xl">ADS</span></h1>
+            <div>
+                <h1 class="text-6xl font-black tracking-tighter">AZELERA <span class="text-blue-500">ADS</span></h1>
+                <p class="text-blue-400 font-bold tracking-[0.5em] text-sm uppercase">Smart Advertising System</p>
+            </div>
         </div>
         <div class="text-right">
-            <p id="reloj" class="text-4xl font-mono font-bold text-slate-400">00:00:00</p>
-            <p class="text-blue-500 font-bold tracking-widest text-sm uppercase">Atacames Live</p>
+            <p id="reloj" class="text-5xl font-mono font-bold text-slate-300">00:00:00</p>
+            <p class="text-slate-500 font-bold tracking-widest text-lg uppercase mt-2">Atacames, Ecuador</p>
         </div>
     </div>
 
-    <!-- CONTENIDO DEL ANUNCIO (CENTRO) -->
+    <!-- CONTENIDO CENTRAL (ANUNCIO) -->
     <div class="flex-1 flex items-center justify-center text-center px-10">
-        <h2 id="textoAnuncio" class="text-[8rem] font-black leading-[0.9] tracking-tight animate-pulse-slow">
+        <h2 id="textoAnuncio" class="text-[9rem] font-black leading-[0.85] tracking-tight animate-pulse-slow uppercase drop-shadow-2xl">
             ESPERANDO ANUNCIO...
         </h2>
     </div>
 
-    <!-- Footer / Barra Inferior -->
-    <div class="bg-blue-600/10 border border-white/5 p-6 rounded-[2rem] flex justify-between items-center backdrop-blur-md">
-        <p class="text-slate-500 font-bold uppercase tracking-widest text-lg">Publicidad en Tiempo Real</p>
-        <div class="flex gap-4 items-center">
-            <div class="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
-            <span class="text-green-500 font-bold">SISTEMA ONLINE</span>
+    <!-- Footer de Estado -->
+    <div class="bg-blue-600/5 border border-white/10 p-8 rounded-[3rem] flex justify-between items-center backdrop-blur-xl">
+        <div class="flex flex-col">
+            <span class="text-slate-500 font-bold uppercase tracking-widest text-sm">Estado del Sistema</span>
+            <div class="flex gap-4 items-center mt-1">
+                <div class="w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+                <span class="text-green-500 font-black text-2xl uppercase">En Línea</span>
+            </div>
+        </div>
+        <div class="text-right">
+            <p class="text-slate-400 font-medium italic text-xl">Sincronizado con Base de Datos Realtime</p>
         </div>
     </div>
 
-    <!-- Lógica de Firebase para la TV -->
+    <!-- Lógica de Conexión Total -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // CONFIGURACIÓN EXACTA PARA NAVI-9AA8E
         const firebaseConfig = {
             apiKey: "AIzaSyD3-C7guJHkmZuwv-TgXNh0XwlYfTSei2k",
             authDomain: "navi-9aa8e.firebaseapp.com",
             projectId: "navi-9aa8e",
-            storageBucket: "navi-9aa8e.firebasestorage.app",
-            messagingSenderId: "324234630620",
+            databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com",
             appId: "1:324234630620:web:0a7353de37ac04fabd6b19"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ESCUCHADOR EN TIEMPO REAL
+        // ESCUCHADOR EN TIEMPO REAL (Misma ruta que el panel)
         const anuncioRef = ref(db, 'anuncio_actual');
+        
         onValue(anuncioRef, (snapshot) => {
             const data = snapshot.val();
             if (data && data.mensaje) {
-                document.getElementById('textoAnuncio').innerText = data.mensaje.toUpperCase();
+                console.log("Nuevo anuncio recibido:", data.mensaje);
+                document.getElementById('textoAnuncio').innerText = data.mensaje;
             }
         });
 
-        // Reloj para la TV
+        // Reloj en vivo
         setInterval(() => {
             const ahora = new Date();
             document.getElementById('reloj').innerText = ahora.toLocaleTimeString();
