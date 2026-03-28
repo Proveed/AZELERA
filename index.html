@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZELERA PREMIUM TV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* --- ESTILOS BASE Y RESPONSIVOS --- */
+        body { 
+            background: #000; 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; /* Evita cualquier desborde */
+            color: white; 
+            font-family: 'Inter', sans-serif;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* Contenedor Principal: Usa Flexbox para ordenar IZQ y DER */
+        #pantalla { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; /* Centra el contenido general */
+            transition: background 1s ease-in-out;
+            box-sizing: border-box;
+            padding: 2vh 2vw; /* Pequeño margen de seguridad */
+        }
+
+        /* --- ZONA DE TEXTO (IZQUIERDA) --- */
+        .text-container {
+            flex: 1; /* Ocupa el espacio disponible proporcionalmente */
+            max-width: 55vw; /* Nunca supera el 55% del ancho de pantalla */
+            padding-left: 4vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 0.5vw solid rgba(255,255,255,0.1);
+            margin-right: 2vw;
+            height: 70vh; /* Altura máxima para el texto */
+            box-sizing: border-box;
+        }
+
+        /* Categoría (arriba) */
+        .categoria-tag {
+            font-size: clamp(0.7rem, 1.2vw, 1.2rem); /* Tamaño fluido y controlado */
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #3b82f6; 
+            margin-bottom: 1vh;
+        }
+
+        /* Título Gancho (El texto grande) */
+        .titulo-gancho {
+            /* Uso de clamp y unidades vh para asegurar que quepa a lo alto */
+            font-size: clamp(2rem, 5vw, 10vh); 
+            font-weight: 900;
+            line-height: 0.95;
+            text-transform: uppercase;
+            font-style: italic;
+            margin-bottom: 3vh;
+            overflow: hidden; /* Corta si es muy largo, para no romper diseño */
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 4; /* Máximo 4 líneas de título */
+            -webkit-box-orient: vertical;
+        }
+
+        /* Cuerpo del Anuncio (Subtítulo) */
+        .cuerpo-anuncio {
+            font-size: clamp(1rem, 1.8vw, 1.8rem); 
+            font-weight: 400;
+            opacity: 0.8;
+            max-width: 90%;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 5; /* Máximo 5 líneas de cuerpo */
+            -webkit-box-orient: vertical;
+        }
+
+        /* --- ZONA QR (DERECHA - EFECTO CRISTAL RESPONSIVO) --- */
+        .qr-wrapper {
+            flex: 0 0 auto; /* No se estira, mantiene su tamaño */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 35vw; /* Ancho fijo proporcional para el QR */
+            max-width: 400px; /* Tamaño máximo físico */
+        }
+
+        /* Tu tarjeta de cristal ajustada */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3vh 3vw; /* Padding proporcional */
+            border-radius: 3rem; /* Bordes suaves */
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%; /* Ocupa todo el wrapper */
+            box-sizing: border-box;
+        }
+
+        /* Contenedor blanco del QR */
+        #qrcode-container {
+            background: white;
+            padding: 2vh;
+            border-radius: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; /* Se ajusta al ancho de la glass-card */
+            box-sizing: border-box;
+        }
+
+        /* El QR real generado por la librería */
+        #qrcode img, #qrcode canvas {
+            max-width: 100%; /* Imprescindible: El QR no puede salir de su contenedor */
+            height: auto !important; /* Mantiene proporción */
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="init" class="fixed inset-0 bg-black z-50 flex items-center justify-center cursor-pointer" onclick="startApp()">
+        <div class="text-blue-500 font-black animate-pulse text-xl tracking-[0.5em]">TOCAR PARA ACTIVAR AZELERA TV</div>
+    </div>
+
+    <div id="pantalla"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://vasfdurinslsoprkvusm.supabase.co';
+        const supabaseKey = 'sb_publishable_KpDcdMU8_qJaeztUIhTxFg_DRvLUOQk';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let anuncios = [];
+        let index = 0;
+
+        async function traerAnuncios() {
+            // Trae los anuncios activos ordenados por ID descendente
+            const { data } = await _supabase.from('anuncios').select('*').eq('activo', true).order('id', { ascending: false });
+            if (data && data.length > 0) {
+                anuncios = data;
+                render();
+            }
+        }
+
+        async function startApp() {
+            document.getElementById('init').style.display = 'none';
+            await traerAnuncios();
+        }
+
+        function render() {
+            if (anuncios.length === 0) return;
+            const ad = anuncios[index];
+            const p = document.getElementById('pantalla');
+            
+            // Fondo de color sólido (Limpiado el degradado para evitar problemas de renderizado en TV)
+            p.style.backgroundColor = ad.color || "#020617";
+            p.style.backgroundImage = "none";
+
+            if (ad.tipo === 'texto') {
+                // ESTRUCTURA HTML LIMPIA Y CONTROLADA
+                p.innerHTML = `
+                    <div class="text-container">
+                        <div class="categoria-tag">${ad.titulo}</div>
+                        <div class="titulo-gancho">${ad.media}</div>
+                        <div class="cuerpo-anuncio">${ad.subtitulo || ""}</div>
+                    </div>
+                    <div class="qr-wrapper">
+                        <div class="glass-card">
+                            <div id="qrcode-container">
+                                <div id="qrcode"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Genera el QR. Ojo: El tamaño aquí es el 'máximo', 
+                // pero el CSS lo ajustará si la pantalla es pequeña.
+                new QRCode(document.getElementById("qrcode"), {
+                    text: ad.link || "https://wa.me/593",
+                    width: 300, 
+                    height: 300,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M // Nivel de corrección medio para mejor escaneo
+                });
+
+                setTimeout(rotate, 15000); // Rotar cada 15 segundos
+            } else if (ad.tipo === 'image') {
+                // Imagen Full Responsiva (object-contain asegura que quepa entera)
+                p.innerHTML = `<img src="${ad.media}" class="max-w-full max-h-full object-contain">`;
+                setTimeout(rotate, 15000);
+            } else {
+                // Video Full Responsivo
+                p.innerHTML = `<video id="adVideo" autoplay muted class="max-w-full max-h-full object-contain"><source src="${ad.media}"></video>`;
+                document.getElementById('adVideo').onended = rotate; // Rota cuando acaba el video
+            }
+        }
+
+        function rotate() {
+            index = (index + 1) % anuncios.length;
+            if (index === 0) traerAnuncios(); // Recarga si dio la vuelta completa
+            render();
+        }
+    </script>
+</body>
+</html>
