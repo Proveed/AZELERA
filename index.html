@@ -6,27 +6,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background: #000; margin: 0; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
+        body { background: #000; margin: 0; overflow: hidden; color: white; font-family: sans-serif; }
         #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: space-between; transition: 1s ease; }
-        
         .bg-degradado { background-size: 400% 400%; animation: moveGradient 15s ease infinite; }
         @keyframes moveGradient { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        
-        .text-area { flex: 1.2; padding: 0 5%; border-left: 10px solid rgba(255,255,255,0.2); height: 75vh; margin-left: 5%; display: flex; flex-direction: column; justify-content: center; }
-        
         .mensaje-main { font-size: clamp(2.5rem, 6vw, 6.5rem); line-height: 0.85; font-weight: 900; text-transform: uppercase; text-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .mensaje-sub { font-size: clamp(1.2rem, 2.8vw, 2.8rem); margin-top: 2rem; font-weight: 400; opacity: 0.95; max-width: 90%; line-height: 1.2; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        
+        .mensaje-sub { font-size: clamp(1.2rem, 2.5vw, 2.8rem); margin-top: 2rem; font-weight: 400; opacity: 0.9; max-width: 90%; line-height: 1.2; }
         .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.15); padding: 60px; border-radius: 5rem; box-shadow: 0 40px 100px rgba(0,0,0,0.6); }
-        .qr-white { background: white; padding: 25px; border-radius: 2.5rem; }
     </style>
 </head>
 <body>
-    <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="startApp()">
-        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black animate-pulse shadow-[0_0_60px_rgba(37,99,235,0.5)]">AZ</div>
-        <p class="mt-8 text-slate-500 font-bold uppercase tracking-widest">Tocar para Conectar</p>
+    <div id="init" class="fixed inset-0 bg-black z-50 flex items-center justify-center cursor-pointer" onclick="startApp()">
+        <div class="text-blue-500 font-black animate-pulse text-4xl">TOCAR PARA ACTIVAR TV</div>
     </div>
-
     <div id="pantalla"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -35,8 +27,7 @@
         const supabaseKey = 'sb_publishable_KpDcdMU8_qJaeztUIhTxFg_DRvLUOQk';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let anuncios = [];
-        let index = 0;
+        let anuncios = []; let index = 0;
 
         async function traerAnuncios() {
             const { data } = await _supabase.from('anuncios').select('*').eq('activo', true);
@@ -45,38 +36,35 @@
 
         async function startApp() {
             document.getElementById('init').style.display = 'none';
-            await traerAnuncios();
-            render();
+            await traerAnuncios(); render();
         }
 
-        function render() {
+        async function render() {
             if (anuncios.length === 0) return setTimeout(startApp, 3000);
             const ad = anuncios[index];
             const p = document.getElementById('pantalla');
-            p.innerHTML = "";
             
-            // CONFIG FONDO
-            p.style.backgroundColor = ad.color || "#020617";
-            if(ad.textura === 'degradado') {
-                p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000, ${ad.color}cc)`;
-                p.className = "bg-degradado";
-            } else { p.className = "bg-solido"; p.style.backgroundImage = "none"; }
+            // Incrementar vistas en Postgres
+            await _supabase.rpc('incrementar_vistas', { ad_id: ad.id });
+
+            p.style.backgroundColor = ad.color;
+            p.className = "bg-degradado";
+            p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000, ${ad.color}cc)`;
 
             if (ad.tipo === 'texto') {
                 p.innerHTML = `
-                    <div class="text-area animate-in slide-in-from-left duration-700">
-                        <p class="text-blue-400 font-black uppercase text-xs tracking-[0.4em] mb-6">${ad.titulo}</p>
-                        <h2 class="mensaje-main ${ad.fuente}">${ad.media}</h2>
-                        <div class="mensaje-sub animate-in fade-in duration-1000 delay-300">${ad.subtitulo || ""}</div>
+                    <div class="flex-1 px-[8%] border-l-[10px] border-white/20 ml-[5%] h-[70vh] flex flex-col justify-center">
+                        <p class="text-blue-400 font-black uppercase text-xs tracking-widest mb-4">${ad.titulo}</p>
+                        <h2 class="mensaje-main italic">${ad.media}</h2>
+                        <div class="mensaje-sub italic">${ad.subtitulo || ""}</div>
                     </div>
-                    <div class="flex-1 flex justify-center items-center animate-in zoom-in duration-1000">
+                    <div class="flex-1 flex justify-center items-center">
                         <div class="glass-card">
-                            <div id="qrcode" class="qr-white"></div>
-                            <p class="mt-8 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Escanea para info</p>
+                            <div id="qrcode" class="bg-white p-6 rounded-[3rem]" onclick="registrarClic(${ad.id})"></div>
                         </div>
                     </div>
                 `;
-                new QRCode(document.getElementById("qrcode"), { text: ad.link, width: 300, height: 300, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.H });
+                new QRCode(document.getElementById("qrcode"), { text: ad.link, width: 300, height: 300 });
                 setTimeout(rotate, 15000);
             } else if (ad.tipo === 'image') {
                 p.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain">`;
@@ -87,11 +75,7 @@
             }
         }
 
-        function rotate() { 
-            index = (index + 1) % anuncios.length; 
-            if(index === 0) traerAnuncios();
-            render(); 
-        }
+        function rotate() { index = (index + 1) % anuncios.length; if(index === 0) traerAnuncios(); render(); }
     </script>
 </body>
 </html>
