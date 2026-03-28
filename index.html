@@ -2,27 +2,108 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AZELERA PREMIUM TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background: #000; margin: 0; overflow: hidden; color: white; font-family: sans-serif; }
-        #pantalla { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: space-between; transition: background 1s ease; }
+        body { background: #000; margin: 0; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
         
-        .text-area { flex: 1.2; padding: 0 8%; border-left: 6px solid rgba(255,255,255,0.15); height: 70vh; margin-left: 5%; display: flex; flex-direction: column; justify-content: center; }
-        
-        .categoria { color: #60a5fa; font-weight: 900; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
-        .mensaje-main { font-size: 5rem; line-height: 0.9; font-weight: 900; text-transform: uppercase; font-style: italic; }
-        .mensaje-sub { font-size: 1.8rem; margin-top: 1.5rem; font-weight: 400; opacity: 0.8; line-height: 1.3; max-width: 85%; }
-        
-        .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.1); padding: 50px; border-radius: 4rem; margin-right: 8%; box-shadow: 0 50px 100px rgba(0,0,0,0.5); }
-        .qr-container { background: white; padding: 25px; border-radius: 2rem; }
+        /* Fondo con el degradado premium que te gusta */
+        #pantalla { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            transition: all 1s ease-in-out;
+            background-size: 400% 400%;
+            animation: gradientMove 12s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- ZONA DE TEXTO (IZQUIERDA) --- */
+        .text-container {
+            flex: 1.4;
+            padding-left: 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 8px solid rgba(255,255,255,0.1);
+            margin-left: 4%;
+            height: 65vh;
+        }
+
+        .categoria-tag {
+            font-size: 0.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #3b82f6; /* Azul brillante como en tu foto */
+            margin-bottom: 1rem;
+        }
+
+        .titulo-gancho {
+            font-size: clamp(3rem, 6vw, 6rem);
+            font-weight: 900;
+            line-height: 0.9;
+            text-transform: uppercase;
+            font-style: italic;
+            margin-bottom: 2rem;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .cuerpo-anuncio {
+            font-size: clamp(1.2rem, 2vw, 2.2rem);
+            font-weight: 400;
+            opacity: 0.8;
+            max-width: 85%;
+            line-height: 1.3;
+        }
+
+        /* --- ZONA QR (DERECHA - EFECTO CRISTAL) --- */
+        .qr-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-right: 5%;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 4.5rem;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.6);
+        }
+
+        #qrcode {
+            background: white;
+            padding: 25px;
+            border-radius: 2.5rem;
+            display: inline-block;
+        }
+
+        #qrcode img {
+            width: 350px !important; /* QR Bien grande para que se vea desde lejos */
+            height: 350px !important;
+        }
     </style>
 </head>
 <body>
+
     <div id="init" class="fixed inset-0 bg-black z-50 flex items-center justify-center cursor-pointer" onclick="startApp()">
-        <div class="text-blue-500 font-black animate-pulse text-2xl tracking-[1em]">AZELERA TV</div>
+        <div class="text-blue-500 font-black animate-pulse text-2xl tracking-[1em]">CONECTANDO AZELERA...</div>
     </div>
+
     <div id="pantalla"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,43 +112,66 @@
         const supabaseKey = 'sb_publishable_KpDcdMU8_qJaeztUIhTxFg_DRvLUOQk';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let anuncios = []; let index = 0;
+        let anuncios = [];
+        let index = 0;
+
+        async function traerAnuncios() {
+            const { data } = await _supabase.from('anuncios').select('*').eq('activo', true).order('id', { ascending: false });
+            if (data && data.length > 0) {
+                anuncios = data;
+                render();
+            }
+        }
 
         async function startApp() {
             document.getElementById('init').style.display = 'none';
-            const { data } = await _supabase.from('anuncios').select('*').eq('activo', true);
-            if (data) { anuncios = data; render(); }
+            await traerAnuncios();
         }
 
         function render() {
             if (anuncios.length === 0) return;
             const ad = anuncios[index];
             const p = document.getElementById('pantalla');
-            p.style.backgroundColor = ad.color;
+            
+            // Fondo dinámico basado en tu color elegido
+            p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000000, ${ad.color}88, #000000)`;
 
             if (ad.tipo === 'texto') {
                 p.innerHTML = `
-                    <div class="text-area">
-                        <p class="categoria">${ad.titulo}</p>
-                        <h2 class="mensaje-main">${ad.media}</h2>
-                        <div class="mensaje-sub">${ad.subtitulo || ""}</div>
+                    <div class="text-container">
+                        <div class="categoria-tag">${ad.titulo}</div>
+                        <div class="titulo-gancho">${ad.media}</div>
+                        <div class="cuerpo-anuncio">${ad.subtitulo || ""}</div>
                     </div>
-                    <div class="glass-card">
-                        <div id="qrcode" class="qr-container"></div>
+                    <div class="qr-wrapper">
+                        <div class="glass-card">
+                            <div id="qrcode"></div>
+                        </div>
                     </div>
                 `;
-                new QRCode(document.getElementById("qrcode"), { text: ad.link, width: 320, height: 320 });
-                setTimeout(rotate, 15000);
+                new QRCode(document.getElementById("qrcode"), {
+                    text: ad.link,
+                    width: 350,
+                    height: 350,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                setTimeout(rotate, 15000); // 15 segundos por anuncio de texto
             } else if (ad.tipo === 'image') {
-                p.innerHTML = `<img src="${ad.media}" class="w-full h-full object-cover">`;
+                p.innerHTML = `<img src="${ad.media}" class="w-full h-full object-contain animate-fade-in">`;
                 setTimeout(rotate, 15000);
             } else {
-                p.innerHTML = `<video autoplay muted class="w-full h-full object-cover"><source src="${ad.media}"></video>`;
-                p.querySelector('video').onended = rotate;
+                p.innerHTML = `<video id="adVideo" autoplay muted class="w-full h-full object-contain"><source src="${ad.media}"></video>`;
+                document.getElementById('adVideo').onended = rotate;
             }
         }
 
-        function rotate() { index = (index + 1) % anuncios.length; render(); }
+        function rotate() {
+            index = (index + 1) % anuncios.length;
+            if (index === 0) traerAnuncios(); // Actualiza si hay anuncios nuevos
+            render();
+        }
     </script>
 </body>
 </html>
