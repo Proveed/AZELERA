@@ -3,92 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZELERA PREMIUM PLAYER</title>
+    <title>AZELERA TV - AUDIO ON</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;800&family=Oswald:wght@500;700&family=Playfair+Display:wght@700;900&family=Bebas+Neue&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Oswald:wght@700&family=Playfair+Display:ital,wght@1,900&family=Bebas+Neue&display=swap');
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: black; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: white; }
+        .split-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
         
-        /* FONDOS DINÁMICOS */
-        #bg-overlay { position: absolute; inset: 0; z-index: 0; transition: all 1.5s ease; }
-        .bg-cosmico { background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 40%, #020617 100%); }
-        .bg-aurora { background: linear-gradient(217deg, rgba(10,100,80,.8), rgba(10,100,80,0) 70.71%), linear-gradient(127deg, rgba(20,50,120,.8), rgba(20,50,120,0) 70.71%), linear-gradient(336deg, rgba(10,20,50,.8), rgba(10,20,50,0) 70.71%); }
-        .bg-nebulosa { background: radial-gradient(circle at 50% 50%, rgba(150, 50, 150, 0.3), rgba(50, 0, 50, 0.7) 50%, rgba(10, 0, 10, 1) 100%); }
-        .bg-minimal { background: #0a0a0a; }
+        #media-panel { width: 65%; height: 100%; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .media-content { width: 100%; height: 100%; object-fit: cover; animation: fadeIn 1s ease-in; }
 
-        /* TEXTURAS SOBREPUESTAS */
-        .texture-layer { position: absolute; inset: 0; opacity: 0.15; pointer-events: none; z-index: 1; }
-        .texture-grain { background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); }
-        .texture-lines { background-image: url('https://www.transparenttextures.com/patterns/accent-dots.png'); }
+        #info-panel { width: 35%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; box-sizing: border-box; transition: all 1s ease; box-shadow: -10px 0 50px rgba(0,0,0,0.5); z-index: 10; }
 
-        /* CONTENEDOR DE MEDIA */
-        #media-container { position: absolute; inset: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; transition: opacity 0.8s; }
-        .media-content { max-width: 85%; max-height: 75%; object-fit: contain; border-radius: 40px; box-shadow: 0 30px 100px rgba(0,0,0,0.8); animation: scaleIn 1.2s ease-out; }
+        #ad-titulo { font-size: 60px; line-height: 1.1; font-weight: 800; text-align: center; margin-bottom: 20px; }
+        #ad-subtitulo { font-size: 26px; font-weight: 500; opacity: 0.9; text-align: center; margin-bottom: 40px; }
 
-        @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.9) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        .font-moderno { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-impacto { font-family: 'Bebas Neue', sans-serif; font-size: 85px !important; letter-spacing: 2px; }
+        .font-elegante { font-family: 'Playfair Display', serif; font-style: italic; font-size: 65px !important; }
 
-        /* BRANDING (LOGO ARRIBA) */
-        #brand-layer { position: absolute; top: 50px; right: 60px; z-index: 20; text-align: right; transition: all 1s ease; opacity: 0; }
-        #brand-layer.show { opacity: 1; transform: translateX(0); }
-        #logo-img { height: 100px; width: auto; object-contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)); margin-bottom: 10px; }
-
-        /* OVERLAY DE TEXTO (GLASSMORPHISM) */
-        #text-overlay { 
-            position: absolute; bottom: 5%; left: 5%; right: 5%; z-index: 10;
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50px;
-            padding: 40px 70px; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6); transform: translateY(50px); opacity: 0; transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        #text-overlay.show { transform: translateY(0); opacity: 1; }
-
-        /* TIPOGRAFÍAS */
-        .font-moderno { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 80px; font-weight: 800; }
-        .font-impacto { font-family: 'Bebas Neue', sans-serif; font-size: 110px; letter-spacing: 2px; }
-        .font-elegante { font-family: 'Playfair Display', serif; font-size: 85px; font-style: italic; }
-        
-        .sub-moderno { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; opacity: 0.8; }
-        .sub-impacto { font-family: 'Oswald', sans-serif; font-size: 40px; text-transform: uppercase; }
-        .sub-elegante { font-family: 'Playfair Display', serif; font-size: 36px; opacity: 0.7; }
-
-        /* QR */
-        .qr-container { background: white; padding: 15px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        .qr-wrapper { background: white; padding: 25px; border-radius: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); transform: scale(1.1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- CAPAS DE FONDO -->
-    <div id="bg-overlay" class="bg-cosmico"></div>
-    <div id="texture-layer" class="texture-layer"></div>
-
-    <!-- LOGO Y EMPRESA -->
-    <div id="brand-layer">
-        <img id="logo-img" src="" alt="">
-        <p id="empresa-nombre" class="text-blue-400 font-bold tracking-[0.3em] uppercase text-sm"></p>
-    </div>
-
-    <!-- MEDIA PRINCIPAL -->
-    <div id="media-container"></div>
-
-    <!-- BARRA DE INFORMACIÓN -->
-    <div id="text-overlay">
-        <div class="flex-1 truncate mr-10">
-            <h1 id="ad-titulo" class="font-moderno leading-none mb-2">AZELERA ADS</h1>
-            <p id="ad-subtitulo" class="sub-moderno">Cargando sistema premium...</p>
+    <div class="split-container">
+        <div id="media-panel">
+            <div id="media-container" class="w-full h-full"></div>
         </div>
-        <div class="qr-container">
-            <div id="qrcode-tv"></div>
+
+        <div id="info-panel">
+            <h1 id="ad-titulo" class="font-moderno">PROMOCIÓN</h1>
+            <p id="ad-subtitulo">Escanea para más información</p>
+            <div class="qr-wrapper">
+                <div id="qrcode-tv"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN DE TU SUPABASE (Cámbialo por tus datos)
         const supabaseUrl = 'https://vasfdurinslsoprkvusm.supabase.co';
         const supabaseKey = 'sb_publishable_KpDcdMU8_qJaeztUIhTxFg_DRvLUOQk';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -97,103 +54,75 @@
         let currentIndex = 0;
         let qrTv;
 
-        // INICIAR
         window.addEventListener('load', () => {
             qrTv = new QRCode(document.getElementById("qrcode-tv"), {
                 text: "https://azelera.com",
-                width: 160, height: 160, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+                width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
             });
-            actualizarCiclo();
+            iniciarApp();
         });
 
-        async function actualizarCiclo() {
-            const { data, error } = await _supabase.from('anuncios').select('*').eq('activo', true).order('id', { ascending: false });
+        async function iniciarApp() {
+            const { data } = await _supabase.from('anuncios').select('*').eq('activo', true).order('id', { ascending: false });
             if (data && data.length > 0) {
                 ads = data;
-                renderAd();
+                mostrarSiguiente();
             } else {
-                setTimeout(actualizarCiclo, 5000);
+                setTimeout(iniciarApp, 5000);
             }
         }
 
-        function renderAd() {
+        function mostrarSiguiente() {
             if (currentIndex >= ads.length) currentIndex = 0;
             const ad = ads[currentIndex];
 
-            // Referencias UI
+            const infoPanel = document.getElementById('info-panel');
             const mediaCont = document.getElementById('media-container');
-            const overlay = document.getElementById('text-overlay');
-            const brand = document.getElementById('brand-layer');
-            const bg = document.getElementById('bg-overlay');
-            const tex = document.getElementById('texture-layer');
+            const tit = document.getElementById('ad-titulo');
+            const sub = document.getElementById('ad-subtitulo');
 
-            // Reset de animaciones
-            overlay.classList.remove('show');
-            brand.classList.remove('show');
-            mediaCont.style.opacity = "0";
+            infoPanel.style.backgroundColor = ad.bg_color || '#1e3a8a';
+            tit.innerText = ad.titulo;
+            sub.innerText = ad.subtitulo || "";
+            tit.style.color = ad.color || '#FFFFFF';
+            sub.style.color = ad.color || '#FFFFFF';
+            tit.className = 'font-' + (ad.font_family || 'moderno');
 
-            setTimeout(() => {
-                // 1. Configurar Fondo y Textura
-                bg.className = "fixed inset-0 transition-all duration-1000 " + (ad.bg_color || 'bg-cosmico');
-                tex.className = "texture-layer " + (ad.texture ? 'texture-' + ad.texture : '');
+            qrTv.makeCode(ad.link || "https://azelera.com");
 
-                // 2. Configurar Branding
-                if (ad.logo) {
-                    document.getElementById('logo-img').src = ad.logo;
-                    document.getElementById('empresa-nombre').innerText = ad.empresa || "";
-                    brand.classList.add('show');
-                }
-
-                // 3. Configurar Textos (Título y Subtítulo)
-                const tit = document.getElementById('ad-titulo');
-                const sub = document.getElementById('ad-subtitulo');
+            mediaCont.innerHTML = "";
+            
+            if (ad.tipo === 'video') {
+                const video = document.createElement('video');
+                video.src = ad.media;
+                video.className = "media-content";
+                video.autoplay = true;
+                video.controls = false;
                 
-                tit.innerText = ad.titulo;
-                tit.style.color = ad.color || '#FFFFFF';
-                // Asignar clase de fuente (si en tu móvil guardas 'impacto', aquí busca 'font-impacto')
-                const fontBase = ad.font_family || 'moderno';
-                tit.className = fontBase.includes('font-') ? fontBase : 'font-' + fontBase;
+                // --- LÓGICA DE AUDIO ---
+                video.muted = false; // Intentamos que suene
+                
+                video.onended = () => { currentIndex++; iniciarApp(); };
+                mediaCont.appendChild(video);
 
-                sub.innerText = ad.subtitulo || "";
-                sub.style.color = ad.color || '#FFFFFF';
-                sub.className = fontBase.includes('font-') ? fontBase.replace('font-', 'sub-') : 'sub-' + fontBase;
+                // Intento de reproducción con audio
+                const playPromise = video.play();
 
-                // 4. Configurar QR
-                qrTv.makeCode(ad.link || "https://azelera.com");
-
-                // 5. Cargar Media
-                mediaCont.innerHTML = "";
-                mediaCont.style.opacity = "1";
-
-                if (ad.tipo === 'video') {
-                    const video = document.createElement('video');
-                    video.src = ad.media;
-                    video.className = "media-content";
-                    video.autoplay = true;
-                    video.muted = true; // Empieza muteado para evitar bloqueo del navegador
-                    video.onended = next;
-                    mediaCont.appendChild(video);
-                    video.play();
-                } else {
-                    const img = document.createElement('img');
-                    img.src = ad.media;
-                    img.className = "media-content";
-                    mediaCont.appendChild(img);
-                    setTimeout(next, 10000); // 10 segundos para imágenes
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Audio bloqueado. Muteando para auto-reproducir.");
+                        video.muted = true; // Si falla, lo muteamos para que al menos se vea
+                        video.play();
+                    });
                 }
-
-                // Mostrar barra de texto
-                setTimeout(() => overlay.classList.add('show'), 800);
-
-            }, 800);
+            } else {
+                const img = document.createElement('img');
+                img.src = ad.media;
+                img.className = "media-content";
+                mediaCont.appendChild(img);
+                setTimeout(() => { currentIndex++; iniciarApp(); }, 12000);
+            }
         }
-
-        function next() {
-            currentIndex++;
-            // Cada vez que termina un anuncio, intentamos refrescar la lista de la BD
-            actualizarCiclo();
-        }
-
     </script>
 </body>
 </html>
