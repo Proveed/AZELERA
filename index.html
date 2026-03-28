@@ -3,42 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZELERA TV - AUDIO ON</title>
+    <title>AZELERA TV - RESPONSIVE SPLIT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Oswald:wght@700&family=Playfair+Display:ital,wght@1,900&family=Bebas+Neue&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Bebas+Neue&family=Playfair+Display:ital,wght@1,900&display=swap');
         
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: white; }
-        .split-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
         
-        #media-panel { width: 65%; height: 100%; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .media-content { width: 100%; height: 100%; object-fit: cover; animation: fadeIn 1s ease-in; }
+        .main-container { display: flex; width: 100vw; height: 100vh; flex-direction: row; }
+        
+        /* LADO IZQUIERDO: MEDIA */
+        #media-panel { width: 65%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .media-content { width: 100%; height: 100%; object-fit: cover; }
 
-        #info-panel { width: 35%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; box-sizing: border-box; transition: all 1s ease; box-shadow: -10px 0 50px rgba(0,0,0,0.5); z-index: 10; }
+        /* LADO DERECHO: INFO (RESPONSIVO) */
+        #info-panel { 
+            width: 35%; height: 100%; 
+            display: flex; flex-direction: column; 
+            justify-content: space-between; /* Distribuye espacio arriba y abajo */
+            align-items: center; 
+            padding: 5% 2%; /* Padding basado en porcentaje para TV */
+            box-sizing: border-box; 
+            transition: background 1s ease;
+            text-align: center;
+        }
 
-        #ad-titulo { font-size: 60px; line-height: 1.1; font-weight: 800; text-align: center; margin-bottom: 20px; }
-        #ad-subtitulo { font-size: 26px; font-weight: 500; opacity: 0.9; text-align: center; margin-bottom: 40px; }
+        /* AJUSTE DE TEXTO PARA QUE NO SE CORTE */
+        .text-container { width: 100%; word-wrap: break-word; }
+        #ad-titulo { font-size: clamp(2rem, 4vw, 5rem); line-height: 1.1; font-weight: 800; margin-bottom: 1rem; }
+        #ad-subtitulo { font-size: clamp(1rem, 1.8vw, 2.5rem); font-weight: 500; opacity: 0.9; }
 
+        /* QR AJUSTADO */
+        .qr-wrapper { 
+            background: white; 
+            padding: 1.5vw; 
+            border-radius: 2vw; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+            max-width: 90%;
+        }
+        canvas, img { max-width: 100%; height: auto !important; }
+
+        /* FUENTES */
         .font-moderno { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-impacto { font-family: 'Bebas Neue', sans-serif; font-size: 85px !important; letter-spacing: 2px; }
-        .font-elegante { font-family: 'Playfair Display', serif; font-style: italic; font-size: 65px !important; }
-
-        .qr-wrapper { background: white; padding: 25px; border-radius: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); transform: scale(1.1); }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .font-impacto { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+        .font-elegante { font-family: 'Playfair Display', serif; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <div class="split-container">
+    <div class="main-container">
         <div id="media-panel">
             <div id="media-container" class="w-full h-full"></div>
         </div>
 
         <div id="info-panel">
-            <h1 id="ad-titulo" class="font-moderno">PROMOCIÓN</h1>
-            <p id="ad-subtitulo">Escanea para más información</p>
+            <div class="text-container">
+                <h1 id="ad-titulo" class="font-moderno">TÍTULO</h1>
+                <p id="ad-subtitulo">Subtítulo Informativo</p>
+            </div>
+            
             <div class="qr-wrapper">
                 <div id="qrcode-tv"></div>
             </div>
@@ -55,72 +81,53 @@
         let qrTv;
 
         window.addEventListener('load', () => {
+            // Tamaño dinámico del QR basado en el ancho de la pantalla
+            const qrSize = window.innerWidth * 0.22; 
             qrTv = new QRCode(document.getElementById("qrcode-tv"), {
                 text: "https://azelera.com",
-                width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+                width: qrSize, height: qrSize, colorDark : "#000", colorLight : "#fff"
             });
-            iniciarApp();
+            iniciar();
         });
 
-        async function iniciarApp() {
+        async function iniciar() {
             const { data } = await _supabase.from('anuncios').select('*').eq('activo', true).order('id', { ascending: false });
             if (data && data.length > 0) {
                 ads = data;
-                mostrarSiguiente();
-            } else {
-                setTimeout(iniciarApp, 5000);
-            }
+                render();
+            } else { setTimeout(iniciar, 5000); }
         }
 
-        function mostrarSiguiente() {
+        function render() {
             if (currentIndex >= ads.length) currentIndex = 0;
             const ad = ads[currentIndex];
 
-            const infoPanel = document.getElementById('info-panel');
-            const mediaCont = document.getElementById('media-container');
+            const info = document.getElementById('info-panel');
             const tit = document.getElementById('ad-titulo');
             const sub = document.getElementById('ad-subtitulo');
+            const mediaCont = document.getElementById('media-container');
 
-            infoPanel.style.backgroundColor = ad.bg_color || '#1e3a8a';
+            info.style.backgroundColor = ad.bg_color || '#1e3a8a';
             tit.innerText = ad.titulo;
             sub.innerText = ad.subtitulo || "";
-            tit.style.color = ad.color || '#FFFFFF';
-            sub.style.color = ad.color || '#FFFFFF';
+            tit.style.color = ad.color || '#fff';
+            sub.style.color = ad.color || '#fff';
             tit.className = 'font-' + (ad.font_family || 'moderno');
 
             qrTv.makeCode(ad.link || "https://azelera.com");
 
             mediaCont.innerHTML = "";
-            
             if (ad.tipo === 'video') {
-                const video = document.createElement('video');
-                video.src = ad.media;
-                video.className = "media-content";
-                video.autoplay = true;
-                video.controls = false;
-                
-                // --- LÓGICA DE AUDIO ---
-                video.muted = false; // Intentamos que suene
-                
-                video.onended = () => { currentIndex++; iniciarApp(); };
-                mediaCont.appendChild(video);
-
-                // Intento de reproducción con audio
-                const playPromise = video.play();
-
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("Audio bloqueado. Muteando para auto-reproducir.");
-                        video.muted = true; // Si falla, lo muteamos para que al menos se vea
-                        video.play();
-                    });
-                }
+                const v = document.createElement('video');
+                v.src = ad.media; v.className = "media-content"; v.autoplay = true; v.muted = false;
+                v.onended = () => { currentIndex++; iniciar(); };
+                mediaCont.appendChild(v);
+                v.play().catch(() => { v.muted = true; v.play(); });
             } else {
-                const img = document.createElement('img');
-                img.src = ad.media;
-                img.className = "media-content";
-                mediaCont.appendChild(img);
-                setTimeout(() => { currentIndex++; iniciarApp(); }, 12000);
+                const i = document.createElement('img');
+                i.src = ad.media; i.className = "media-content";
+                mediaCont.appendChild(i);
+                setTimeout(() => { currentIndex++; iniciar(); }, 12000);
             }
         }
     </script>
