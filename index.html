@@ -19,31 +19,33 @@
 </head>
 <body>
     <div id="init" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer" onclick="startApp()">
-        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black">AZ</div>
-        <p class="mt-8 text-slate-500 font-bold uppercase">Conectar Pantalla</p>
+        <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-black shadow-[0_0_50px_rgba(37,99,235,0.6)]">AZ</div>
+        <p class="mt-8 text-slate-500 font-bold uppercase tracking-widest">Conectar Pantalla</p>
     </div>
     <div id="pantalla"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://vasfdurinslsoprkvusm.supabase.co';
+        const supabaseKey = 'TU_SUPABASE_ANON_KEY';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        const db = getDatabase(initializeApp({ databaseURL: "https://navi-9aa8e-default-rtdb.firebaseio.com" }));
         let anuncios = [];
         let index = 0;
 
-        onValue(ref(db, 'carrusel'), (snap) => {
-            const data = snap.val();
-            if (data) anuncios = Object.values(data).filter(a => a.activo);
-        });
+        async function traerAnuncios() {
+            const { data } = await _supabase.from('anuncios').select('*').eq('activo', true);
+            if (data) anuncios = data;
+        }
 
-        window.startApp = () => {
+        async function startApp() {
             document.getElementById('init').style.display = 'none';
+            await traerAnuncios();
             render();
-        };
+        }
 
         function render() {
-            if (anuncios.length === 0) return setTimeout(render, 2000);
+            if (anuncios.length === 0) return setTimeout(startApp, 3000);
             const ad = anuncios[index];
             const p = document.getElementById('pantalla');
             p.innerHTML = "";
@@ -52,7 +54,7 @@
             if(ad.textura === 'degradado') {
                 p.style.backgroundImage = `linear-gradient(-45deg, ${ad.color}, #000, ${ad.color}cc)`;
                 p.className = "bg-degradado";
-            } else { p.className = `bg-${ad.textura || 'solido'}`; }
+            } else { p.className = "bg-solido"; p.style.backgroundImage = "none"; }
 
             if (ad.tipo === 'texto') {
                 p.innerHTML = `
@@ -77,7 +79,12 @@
                 document.getElementById('v').onended = rotate;
             }
         }
-        function rotate() { index = (index + 1) % anuncios.length; render(); }
+
+        function rotate() { 
+            index = (index + 1) % anuncios.length; 
+            if(index === 0) traerAnuncios(); // Recarga la lista al dar la vuelta
+            render(); 
+        }
     </script>
 </body>
 </html>
